@@ -88,7 +88,7 @@ A modern, full-stack hospital appointment management system designed to streamli
 ### Frontend Setup (React + Vite)
 1. **Install dependencies**
    ```bash
-   cd ../Efoy-client
+   cd ../client
    npm install
    ```
 2. **Start the development server**
@@ -112,7 +112,7 @@ docker-compose up --build
 - **Backend**: See `server/.env.template` for required variables
   - **Core**: MongoDB URI, JWT secret, Cloudinary credentials
   - **New**: `STREAM_API_KEY` and `STREAM_API_SECRET` for video calling
-- **Frontend**: Add any required API URLs or keys to `.env` in `Efoy-client` if needed
+- **Frontend**: Add any required API URLs or keys to `.env` in `client` if needed
 
 ---
 

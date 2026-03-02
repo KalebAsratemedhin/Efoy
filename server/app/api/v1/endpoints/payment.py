@@ -3,6 +3,7 @@ from typing import Dict, Any
 import stripe
 import os
 from app.services.payment_service import PaymentService
+from app.core.config import get_settings
 from app.schemas.payment import (
     CreatePaymentIntentRequest,
     CreateCheckoutSessionRequest,
@@ -87,8 +88,8 @@ async def debug_config():
         "stripe_key_configured": bool(os.getenv("STRIPE_SECRET_KEY")),
         "stripe_key_length": len(os.getenv("STRIPE_SECRET_KEY", "")) if os.getenv("STRIPE_SECRET_KEY") else 0,
         "client_url": settings.CLIENT_URL,
-        "webhook_secret_configured": bool(os.getenv("STRIPE_WEBHOOK_SECRET")),
-        "webhook_secret_length": len(os.getenv("STRIPE_WEBHOOK_SECRET", "")) if os.getenv("STRIPE_WEBHOOK_SECRET") else 0
+        "webhook_secret_configured": bool(get_settings().STRIPE_WEBHOOK_SECRET),
+        "webhook_secret_length": len(get_settings().STRIPE_WEBHOOK_SECRET or "")
     }
 
 @router.post("/webhook")
@@ -99,8 +100,8 @@ async def stripe_webhook(request: Request):
     try:
         logging.info("Webhook received")
         
-        # Get the webhook secret from environment
-        webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+        # Get the webhook secret from settings (loads from .env)
+        webhook_secret = get_settings().STRIPE_WEBHOOK_SECRET
         if not webhook_secret:
             logging.error("STRIPE_WEBHOOK_SECRET not configured")
             raise HTTPException(

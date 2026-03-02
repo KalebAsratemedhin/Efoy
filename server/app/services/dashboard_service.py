@@ -5,12 +5,14 @@ from beanie import PydanticObjectId
 from datetime import date, datetime
 from fastapi import HTTPException
 from typing import List, Dict
-from beanie.operators import And
+from beanie.operators import And, Or
 from app.core.config import get_settings
 
 settings = get_settings()
 
 class DashboardService:
+    UPCOMING_STATUSES = ["pending", "confirmed", "approved"]
+
     @staticmethod
     async def get_doctor_dashboard(doctor_id: str) -> dict:
         """Get all dashboard data for a doctor in one call"""
@@ -36,7 +38,7 @@ class DashboardService:
             And(
                 Booking.doctorId.id == PydanticObjectId(doctor_id),
                 Booking.appointmentDate >= date.today(),
-                Booking.status == "pending"
+                Or(*[Booking.status == s for s in DashboardService.UPCOMING_STATUSES])
             ), fetch_links=True
         ).sort([("appointmentDate", 1), ("time", 1)]).first_or_none()
         
@@ -79,6 +81,7 @@ class DashboardService:
             And(
                 Booking.patientId.id == PydanticObjectId(patient_id),
                 Booking.appointmentDate >= date.today(),
+                Or(*[Booking.status == s for s in DashboardService.UPCOMING_STATUSES]),
             )
         ).count()
         
@@ -101,7 +104,7 @@ class DashboardService:
             And(
                 Booking.patientId.id == PydanticObjectId(patient_id),
                 Booking.appointmentDate >= date.today(),
-                Booking.status == "pending"
+                Or(*[Booking.status == s for s in DashboardService.UPCOMING_STATUSES])
 
             ), fetch_links=True
         ).sort([("appointmentDate", 1), ("time", 1)]).first_or_none()

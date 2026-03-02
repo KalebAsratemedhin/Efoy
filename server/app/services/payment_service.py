@@ -1,5 +1,4 @@
 import stripe
-import os
 from typing import Optional, Dict, Any
 from datetime import datetime
 from fastapi import HTTPException, status
@@ -15,12 +14,11 @@ from app.schemas.payment import (
 from beanie import PydanticObjectId
 from app.core.config import get_settings
 
-# Initialize Stripe
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-if not stripe.api_key:
-    raise ValueError("STRIPE_SECRET_KEY environment variable is required")
-
+# Load settings first so .env is loaded (pydantic-settings), then initialize Stripe
 settings = get_settings()
+if not settings.STRIPE_SECRET_KEY:
+    raise ValueError("STRIPE_SECRET_KEY environment variable is required")
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class PaymentService:
     @staticmethod
