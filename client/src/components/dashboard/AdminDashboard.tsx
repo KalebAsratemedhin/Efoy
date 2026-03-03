@@ -46,7 +46,7 @@ const AdminDashboard = () => {
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="py-4 px-5 border border-slate-200 rounded-xl bg-white hover:border-slate-300 transition-colors">
+        <div className="py-4 px-5 border border-slate-100 rounded-xl bg-white hover:border-slate-300 transition-colors">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
               <FaUsers className="text-slate-600" />
@@ -57,7 +57,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-        <div className="py-4 px-5 border border-slate-200 rounded-xl bg-white hover:border-slate-300 transition-colors">
+        <div className="py-4 px-5 border border-slate-100 rounded-xl bg-white hover:border-slate-300 transition-colors">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
               <FaChartPie className="text-slate-600" />
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-        <div className="py-4 px-5 border border-slate-200 rounded-xl bg-white hover:border-slate-300 transition-colors">
+        <div className="py-4 px-5 border border-slate-100 rounded-xl bg-white hover:border-slate-300 transition-colors">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
               <FaUserCog className="text-slate-600" />

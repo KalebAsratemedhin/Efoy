@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useGetCurrentUserQuery } from "../../redux/api/userAPI";
 import { useEffect, useState } from "react";
 import { useUpdateUserMutation } from "../../redux/api/userAPI";
@@ -7,6 +7,13 @@ import FormSuccess from "../utils/FormSuccess";
 import ProfilePicture from "./ProfilePicture";
 import DoctorProfileEdit from "./DoctorProfileEdit";
 import { UserUpdate } from "../../types/User";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { FaChevronDown } from "react-icons/fa";
 
 interface FormData {
   fullName: string;
@@ -20,7 +27,7 @@ interface FormData {
 const Profile = () => {
   const { isSuccess, data: user } = useGetCurrentUserQuery();
   const [updateUser, { isError: isUpdateError, error: updateError, isSuccess: isUpdateSuccess }] = useUpdateUserMutation();
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm<FormData>();
   const [activeTab, setActiveTab] = useState<'personal' | 'professional'>('personal');
 
   const onSubmit = async (data: FormData) => {
@@ -142,16 +149,32 @@ const Profile = () => {
               <label htmlFor="sex" className="block text-sm font-medium text-slate-700 mb-1.5">
                 Gender
               </label>
-              <select
-                id="sex"
-                {...register('sex')}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-              >
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
+              <Controller
+                name="sex"
+                control={control}
+                render={({ field }) => {
+                  const label = field.value === "male" ? "Male" : field.value === "female" ? "Female" : field.value === "other" ? "Other" : "Select gender";
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          id="sex"
+                          className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-left text-ink bg-white flex items-center justify-between gap-2 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent hover:bg-slate-50"
+                        >
+                          <span className={!field.value ? "text-slate-400" : ""}>{label}</span>
+                          <FaChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                        <DropdownMenuItem onClick={() => field.onChange("male")}>Male</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => field.onChange("female")}>Female</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => field.onChange("other")}>Other</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                }}
+              />
             </div>
 
             <div>

@@ -46,7 +46,7 @@ Your appointment has been confirmed.`;
 
   return (
     <div className="max-w-xl mx-auto text-left py-8 px-4">
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
         <div className="p-8 sm:p-10">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">

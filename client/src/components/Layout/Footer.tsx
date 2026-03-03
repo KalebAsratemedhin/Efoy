@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaShieldAlt, FaUserMd, FaHeartbeat, FaAmbulance } from "react-icons/fa";
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaUserMd } from "react-icons/fa";
 
 const Footer = () => {
     return (
@@ -69,20 +69,8 @@ const Footer = () => {
                                 Doctor Consultations
                             </li>
                             <li className="text-gray-400 flex items-center gap-2">
-                                <FaHeartbeat className="text-accent" />
-                                Health Checkups
-                            </li>
-                            <li className="text-gray-400 flex items-center gap-2">
-                                <FaAmbulance className="text-accent" />
-                                Emergency Care
-                            </li>
-                            <li className="text-gray-400 flex items-center gap-2">
-                                <FaShieldAlt className="text-accent" />
-                                Health Insurance
-                            </li>
-                            <li className="text-gray-400 flex items-center gap-2">
                                 <FaClock className="text-accent" />
-                                24/7 Support
+                                Book Appointments
                             </li>
                         </ul>
                     </motion.div>
@@ -126,30 +114,6 @@ const Footer = () => {
                         </div>
                     </motion.div>
                 </div>
-
-                {/* Additional Info Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-                >
-                    <div className="bg-elevated rounded-lg p-4 border border-white/5">
-                        <h5 className="text-accent font-semibold mb-2">Emergency</h5>
-                        <p className="text-gray-400 text-sm">24/7 emergency support available</p>
-                        <a href="tel:+251911234567" className="text-accent text-sm font-medium">Call Now</a>
-                    </div>
-                    <div className="bg-elevated rounded-lg p-4 border border-white/5">
-                        <h5 className="text-accent font-semibold mb-2">Health Tips</h5>
-                        <p className="text-gray-400 text-sm">Get the latest health and wellness tips</p>
-                        <a href="#" className="text-accent text-sm font-medium">Read More</a>
-                    </div>
-                    <div className="bg-elevated rounded-lg p-4 border border-white/5">
-                        <h5 className="text-accent font-semibold mb-2">Newsletter</h5>
-                        <p className="text-gray-400 text-sm">Subscribe for health updates</p>
-                        <a href="#" className="text-accent text-sm font-medium">Subscribe</a>
-                    </div>
-                </motion.div>
 
                 {/* Bottom Section */}
                 <motion.div 

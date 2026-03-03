@@ -10,9 +10,10 @@ interface ReminderProps {
   isLoading?: boolean;
   error?: any;
   userRole?: 'doctor' | 'patient';
+  className?: string;
 }
 
-const Reminder = ({ dashboardData, isLoading, error, userRole = 'doctor' }: ReminderProps) => {
+const Reminder = ({ dashboardData, isLoading, error, userRole = 'doctor', className = '' }: ReminderProps) => {
   const { isDarkMode } = useTheme();
   
   // Get the upcoming appointment from dashboard data
@@ -21,7 +22,6 @@ const Reminder = ({ dashboardData, isLoading, error, userRole = 'doctor' }: Remi
   
   const textColor = '#000000' ;
   const secondaryTextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
-  const bgColor = isDarkMode ? '#1F2937' : '#FFFFFF';
 
   useEffect(() => {
     console.log('dashboardData', dashboardData);
@@ -34,7 +34,7 @@ const Reminder = ({ dashboardData, isLoading, error, userRole = 'doctor' }: Remi
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-slate-50 border border-slate-200 shadow-sm rounded-xl overflow-hidden sticky top-6 p-0 hover:shadow-md transition-shadow duration-300 self-start"
+        className={`bg-slate-50 border border-slate-200 shadow-sm rounded-xl overflow-hidden sticky top-6 p-0 hover:shadow-md transition-shadow duration-300 ${className || 'self-start'}`}
       >
         <div className="animate-pulse">
           <div className="bg-slate-700 p-6">
@@ -61,7 +61,7 @@ const Reminder = ({ dashboardData, isLoading, error, userRole = 'doctor' }: Remi
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-slate-50 border border-slate-200 shadow-sm rounded-xl overflow-hidden sticky top-6 p-0 hover:shadow-md transition-shadow duration-300 self-start"
+        className={`bg-slate-50 border border-slate-200 shadow-sm rounded-xl overflow-hidden sticky top-6 p-0 hover:shadow-md transition-shadow duration-300 ${className || 'self-start'}`}
       >
         <div className="bg-slate-700 p-6">
           <div className="flex items-center gap-3 text-white">
@@ -83,7 +83,7 @@ const Reminder = ({ dashboardData, isLoading, error, userRole = 'doctor' }: Remi
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ delay: 0.5 }}
-    className="bg-slate-50 border border-slate-200 shadow-sm rounded-xl overflow-hidden sticky top-6 p-0 hover:shadow-md transition-shadow duration-300 self-start"
+    className={`bg-slate-50 border border-slate-200 shadow-sm rounded-xl overflow-hidden sticky top-6 p-0 hover:shadow-md transition-shadow duration-300 ${className || 'self-start'}`}
   >
     <div >
       {/* Header */}

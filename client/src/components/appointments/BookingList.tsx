@@ -72,7 +72,7 @@ const BookingList = () => {
             </p>
           </div>
         ) : (
-          <div className="max-w-2xl space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredBookings.map((booking: BookingPopulated) =>
               authState.role === "patient" ? (
                 <BookingCardPatient key={booking.id} booking={booking} refetch={refetch} />

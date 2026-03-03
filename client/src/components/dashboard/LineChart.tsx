@@ -26,14 +26,15 @@ const LineChart = ({ data, title, label, labels }: LineChartProps) => {
   const gradientId = 'lineGradient';
 
   return (
-    <div className="w-full  h-[300px]">
-      <div className="px-6 ">
+    <div className="w-full flex-1 min-h-0 flex flex-col">
+      <div className="px-6 shrink-0">
         <h3 className="text-2xl font-bold" style={{ color: textColor }}>{title}</h3>
         <p className="text-sm mt-2" style={{ color: isDarkMode ? '#9CA3AF' : '#6B7280' }}>
           Monthly statistics for {label.toLowerCase()}
         </p>
       </div>
-      <ResponsiveContainer width="100%" height="100%" className="py-6 pr-6">
+      <div className="flex-1 min-h-0 py-6 pr-6 pl-6">
+        <ResponsiveContainer width="100%" height="100%">
         <RechartsLineChart
           data={chartData}
           
@@ -105,6 +106,7 @@ const LineChart = ({ data, title, label, labels }: LineChartProps) => {
           />
         </RechartsLineChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 };

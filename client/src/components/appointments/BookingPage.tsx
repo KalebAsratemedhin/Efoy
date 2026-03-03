@@ -7,7 +7,7 @@ import Spinner from "../utils/Spinner";
 import Error from "../utils/Error";
 import { useCreateBookingMutation } from "../../redux/api/bookingAPI";
 import TimeDate from "./TimeDate";
-import { FaUserMd, FaClock, FaInfoCircle, FaArrowLeft, FaVideo, FaCreditCard } from "react-icons/fa";
+import { FaClock, FaInfoCircle, FaArrowLeft, FaVideo, FaCreditCard } from "react-icons/fa";
 
 interface FormData {
   appointmentDate: string;
@@ -69,7 +69,7 @@ const BookingPage = () => {
       </button>
 
       {/* Doctor summary */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6">
+      <div className="bg-white border border-slate-100 rounded-xl p-5 mb-6">
         <div className="flex items-center gap-4">
           <img
             src={avatarUrl}
@@ -89,7 +89,7 @@ const BookingPage = () => {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="bg-white border border-slate-100 rounded-xl p-6">
           <label htmlFor="reason" className={`${labelClass} flex items-center gap-2`}>
             <FaInfoCircle className="text-slate-500 w-4 h-4" />
             Reason for appointment
@@ -106,7 +106,7 @@ const BookingPage = () => {
           )}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="bg-white border border-slate-100 rounded-xl p-6">
           <label className={`${labelClass} flex items-center gap-2`}>
             <FaVideo className="text-slate-500 w-4 h-4" />
             Appointment type

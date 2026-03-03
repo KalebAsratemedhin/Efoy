@@ -77,7 +77,7 @@ const BookingDetails = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 text-left">
+          <div className="bg-white border border-slate-100 rounded-xl p-4 text-left">
             <h2 className="text-sm font-semibold text-ink mb-3">
               {authState.role === "patient" ? "Doctor" : "Patient"}
             </h2>
@@ -124,7 +124,7 @@ const BookingDetails = () => {
             )}
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 text-left">
+          <div className="bg-white border border-slate-100 rounded-xl p-4 text-left">
             <h2 className="text-sm font-semibold text-ink mb-3">Status</h2>
             <div className="space-y-3 text-sm">
               <div className="flex flex-col gap-1">
@@ -225,7 +225,7 @@ const BookingDetails = () => {
 
         <div className="lg:col-span-2">
           {authState.role === "patient" ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-5 text-left">
+            <div className="bg-white border border-slate-100 rounded-xl p-5 text-left">
               <h2 className="text-sm font-semibold text-ink mb-3">Edit Appointment</h2>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
@@ -266,7 +266,7 @@ const BookingDetails = () => {
               </form>
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-xl p-5 text-left">
+            <div className="bg-white border border-slate-100 rounded-xl p-5 text-left">
               <h2 className="text-sm font-semibold text-ink mb-3">Appointment info</h2>
               <div className="space-y-4 text-sm">
                 <div>

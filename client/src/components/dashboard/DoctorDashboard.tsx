@@ -20,7 +20,7 @@ const DoctorDashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <p className="text-slate-600 text-sm">Welcome back, Dr. {user?.fullName}</p>
+      <p className="text-slate-700 text-2xl font-bold">Welcome back, Dr. {user?.fullName}</p>
 
       {/* Stat tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-6">
@@ -70,36 +70,39 @@ const DoctorDashboard = () => {
         </div>
       </div>
 
-      {/* Report (most space) + Upcoming appointment (minimal width) side by side */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-6 items-start">
-        <div className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl py-8 px-8">
-          <MonthlyReport 
-            dashboardData={dashboardData}
-            isLoading={isDashboardLoading}
-            error={dashboardError}
-          />
+      {/* Report + Upcoming appointment side by side, equal height via grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 mb-6 items-stretch">
+        <div className="min-h-0 flex flex-col bg-slate-50 border border-slate-200 rounded-xl py-8 px-8">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <MonthlyReport 
+              dashboardData={dashboardData}
+              isLoading={isDashboardLoading}
+              error={dashboardError}
+            />
+          </div>
         </div>
-        <div className="lg:w-auto shrink-0">
+        <div className="min-h-0">
           <Reminder 
             dashboardData={dashboardData}
             isLoading={isDashboardLoading}
             error={dashboardError}
             userRole="doctor"
+            className="h-full"
           />
         </div>
       </div>
 
       {/* Cards below - full width */}
       <div className="space-y-6">
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+        <div className="bg-slate-50 rounded-xl p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-ink">Recent Prescriptions</h2>
             <Link to="/prescriptions" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>
           </div>
           {prescriptionsData?.items && prescriptionsData.items.length > 0 ? (
-            <div className="space-y-3 max-w-3xl">
-              {prescriptionsData.items.slice(0, 3).map((prescription) => (
-                <div key={prescription.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {prescriptionsData.items.slice(0, 4).map((prescription) => (
+                <div key={prescription.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
                       <FaPills className="text-slate-600 text-sm" />

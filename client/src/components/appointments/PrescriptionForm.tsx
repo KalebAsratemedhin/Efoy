@@ -141,7 +141,7 @@ const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
   const labelClass = "block text-sm font-medium text-slate-700 mb-1.5";
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6">
+    <div className="bg-white border border-slate-100 rounded-xl p-6">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-ink flex items-center gap-2">

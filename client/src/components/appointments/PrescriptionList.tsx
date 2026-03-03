@@ -62,6 +62,7 @@ const PrescriptionList: React.FC = () => {
   if (!prescriptionsData?.items || prescriptionsData.items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto">
+        <p className="text-slate-700 text-2xl font-bold mb-2">Prescriptions</p>
         <p className="text-slate-600 text-sm mb-4">{isDoctor ? 'Manage prescriptions you create for patients.' : 'View your medical prescriptions.'}</p>
         <div className="bg-white border border-slate-200 rounded-lg p-8 text-center text-slate-600">
           {isDoctor ? "You haven't created any prescriptions yet." : "You don't have any prescriptions yet."}
@@ -72,13 +73,14 @@ const PrescriptionList: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
+      <p className="text-slate-700 text-2xl font-bold mb-2">Prescriptions</p>
       <p className="text-slate-600 text-sm mb-4">{isDoctor ? 'Manage prescriptions for your patients.' : 'View your medical prescriptions.'}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {prescriptionsData.items.map((prescription) => (
           <div
             key={prescription.id}
-            className="bg-white border border-slate-200 rounded-lg overflow-hidden"
+            className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm"
           >
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">

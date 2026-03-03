@@ -28,7 +28,7 @@ const Layout = () => {
       <div className="flex flex-col flex-grow overflow-auto">
         <Header onSidebarToggle={handleSidebarToggle} />
         <div
-          className={`flex-grow ${isAppLayout ? "bg-slate-50 p-6" : ""}`}
+          className={`flex-grow ${isAppLayout ? "bg-slate-100 p-6" : ""}`}
         >
           <Outlet />
         </div>

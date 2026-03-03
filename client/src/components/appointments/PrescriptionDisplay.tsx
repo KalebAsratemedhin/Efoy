@@ -220,7 +220,7 @@ const PrescriptionDisplay: React.FC<PrescriptionDisplayProps> = ({
   const canGeneratePDF = hasSignature || prescription.digitalSignature;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm text-left">
+    <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm text-left">
       {/* Header */}
       <div className="px-6 py-5 border-b border-slate-200 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">

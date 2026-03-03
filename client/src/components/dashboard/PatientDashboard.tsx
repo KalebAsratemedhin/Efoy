@@ -26,7 +26,7 @@ const PatientDashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <p className="text-slate-600 text-sm">Welcome back, {user?.fullName}</p>
+      <p className="text-slate-700 text-2xl font-bold">Welcome back, {user?.fullName}</p>
 
       {/* Stat tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-6">
@@ -76,121 +76,122 @@ const PatientDashboard = () => {
         </div>
       </div>
 
-      {/* Report (most space) + Upcoming appointment (minimal width) side by side */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-6 items-start">
-        <div className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl py-8 px-8">
-          <MonthlyReport 
-            dashboardData={dashboardData}
-            isLoading={isDashboardLoading}
-            error={dashboardError}
-          />
+      {/* Report + Upcoming appointment side by side, equal height via grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 mb-6 items-stretch">
+        <div className="min-h-0 flex flex-col bg-slate-50 border border-slate-200 rounded-xl py-8 px-8">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <MonthlyReport 
+              dashboardData={dashboardData}
+              isLoading={isDashboardLoading}
+              error={dashboardError}
+            />
+          </div>
         </div>
-        <div className="lg:w-auto shrink-0">
+        <div className="min-h-0">
           <Reminder 
             dashboardData={dashboardData}
             isLoading={isDashboardLoading}
             error={dashboardError}
             userRole="patient"
+            className="h-full"
           />
         </div>
       </div>
 
-      {/* Cards below - full width */}
-      <div className="space-y-6">
-          {/* Payment Section */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-ink">Unpaid Appointments</h2>
-              <Link to="/appointments" className="text-slate-600 hover:text-ink text-sm font-medium">
-                View all
-              </Link>
-            </div>
-            {bookingsData?.items && bookingsData.items.filter(booking => booking.paymentStatus === 'unpaid').length > 0 ? (
-                   <div className="max-w-2xl space-y-3">
-                     {bookingsData.items
-                       .filter(booking => booking.paymentStatus === 'unpaid')
-                       .slice(0, 3)
-                       .map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                          <FaCreditCard className="text-yellow-600 text-sm" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            Dr. {booking.doctorId?.fullName}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {new Date(booking.appointmentDate || '').toLocaleDateString()} at {formatTime(booking.time)}
-                          </p>
-                        </div>
-                      </div>
-                                             <div className="flex items-center gap-2">
-                         <span className="text-sm font-medium text-yellow-800">${booking.paymentAmount || 150.00}</span>
-                        <Link 
-                          to={`/payment/${booking.id}`}
-                          className="px-3 py-1 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
-                        >
-                          Pay Now
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-slate-500 text-sm">No unpaid appointments</div>
-            )}
+      {/* Unpaid + Prescriptions side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-ink">Unpaid Appointments</h2>
+            <Link to="/appointments" className="text-slate-600 hover:text-ink text-sm font-medium">
+              View all
+            </Link>
           </div>
-
-          {/* Favorites */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-ink">Favorite Doctors</h2>
-              <Link to="/appointments" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>
-            </div>
-            <div className="max-w-3xl">
-              <FavoritesList />
-            </div>
-          </div>
-
-          {/* Prescriptions */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-ink">Recent Prescriptions</h2>
-              <Link to="/prescriptions" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>
-            </div>
-            {prescriptionsData?.items && prescriptionsData.items.length > 0 ? (
-              <div className="space-y-3 max-w-3xl">
-                {prescriptionsData.items.slice(0, 3).map((prescription) => (
-                  <div key={prescription.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          {bookingsData?.items && bookingsData.items.filter(booking => booking.paymentStatus === 'unpaid').length > 0 ? (
+            <div className="space-y-3">
+              {bookingsData.items
+                .filter(booking => booking.paymentStatus === 'unpaid')
+                .slice(0, 3)
+                .map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                        <FaPills className="text-slate-600 text-sm" />
+                      <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                        <FaCreditCard className="text-amber-600 text-sm" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800">
-                          Dr. {prescription.doctorId?.fullName}
+                        <p className="font-medium text-ink text-sm">
+                          Dr. {booking.doctorId?.fullName}
                         </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(prescription.issueDate || '').toLocaleDateString()}
+                        <p className="text-xs text-slate-600">
+                          {new Date(booking.appointmentDate || '').toLocaleDateString()} at {formatTime(booking.time)}
                         </p>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      prescription.status === 'active' ? 'bg-green-100 text-green-800' :
-                      prescription.status === 'expired' ? 'bg-red-100 text-red-800' :
-                      'bg-slate-100 text-slate-800'
-                    }`}>
-                      {prescription.status || 'N/A'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-amber-800">${booking.paymentAmount || 150.00}</span>
+                      <Link 
+                        to={`/payment/${booking.id}`}
+                        className="px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium"
+                      >
+                        Pay now
+                      </Link>
+                    </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-slate-500 text-sm">No prescriptions yet</div>
-            )}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-slate-500 text-sm">No unpaid appointments</div>
+          )}
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-ink">Recent Prescriptions</h2>
+            <Link to="/prescriptions" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>
           </div>
+          {prescriptionsData?.items && prescriptionsData.items.length > 0 ? (
+            <div className="space-y-3">
+              {prescriptionsData.items.slice(0, 3).map((prescription) => (
+                <div key={prescription.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                      <FaPills className="text-slate-600 text-sm" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-ink text-sm">
+                        Dr. {prescription.doctorId?.fullName}
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        {new Date(prescription.issueDate || '').toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    prescription.status === 'active' ? 'bg-green-100 text-green-800' :
+                    prescription.status === 'expired' ? 'bg-red-100 text-red-800' :
+                    'bg-slate-100 text-slate-800'
+                  }`}>
+                    {prescription.status || 'N/A'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-slate-500 text-sm">No prescriptions yet</div>
+          )}
+        </div>
       </div>
+
+      {/* Favorite doctors - not a card, at bottom */}
+      <section>
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-semibold text-ink">Favorite Doctors</h2>
+          <Link to="/doctors" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>
+        </div>
+        <div className="max-w-3xl">
+          <FavoritesList />
+        </div>
+      </section>
     </div>
   )
 }

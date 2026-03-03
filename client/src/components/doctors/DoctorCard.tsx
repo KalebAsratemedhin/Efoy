@@ -9,7 +9,7 @@ interface DoctorCardProps {
 const DoctorCard = ({ doctor }: DoctorCardProps) => {
   if (!doctor?.userId) {
     return (
-      <div className="flex flex-col bg-stone-50/80 border border-slate-200 rounded-xl overflow-hidden animate-pulse">
+      <div className="flex flex-col bg-stone-50/80 border border-slate-100 rounded-xl overflow-hidden animate-pulse">
         <div className="w-full h-40 bg-slate-200" />
         <div className="p-5 space-y-2">
           <div className="h-5 bg-slate-200 rounded w-2/3" />
@@ -29,7 +29,7 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
   return (
     <Link
       to={`/book/${doctor.userId.id}`}
-      className="group flex flex-col items-start bg-stone-50/80 border border-slate-200 rounded-xl overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:ring-offset-2 hover:border-slate-300 hover:shadow-md"
+      className="group flex flex-col items-start bg-stone-50/80 border border-slate-100 rounded-xl overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:ring-offset-2 hover:border-slate-300 hover:shadow-md"
     >
       <img
         src={avatarUrl}

@@ -45,7 +45,7 @@ const CalendarPage = () => {
       </div>
 
       {events.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+        <div className="bg-white border border-slate-100 rounded-xl p-12 text-center">
           <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
             <FaCalendarAlt className="text-slate-400 w-8 h-8" />
           </div>
@@ -53,8 +53,8 @@ const CalendarPage = () => {
           <p className="text-slate-500 text-sm mt-1">Your upcoming appointments will appear here.</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-          <div className="p-4 sm:p-6">
+        <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+          <div className="p-4 sm:p-6 calendar-slate">
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
               initialView="dayGridMonth"
@@ -77,7 +77,6 @@ const CalendarPage = () => {
                 list: "List",
               }}
               windowResize={() => {}}
-              className="calendar-slate"
             />
           </div>
         </div>

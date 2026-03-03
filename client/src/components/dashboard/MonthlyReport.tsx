@@ -20,7 +20,7 @@ const MonthlyReport = ({ dashboardData, isLoading, error }: MonthlyReportProps) 
   if (dashboardData?.monthly_chart_data) {
     const isPatient = authState.role === "patient";
     return (
-      <div className="w-full">
+      <div className="w-full flex-1 min-h-0 flex flex-col">
         <LineChart 
           label={isPatient ? 'Bookings' : 'Patients'} 
           data={dashboardData.monthly_chart_data.data} 
@@ -31,7 +31,7 @@ const MonthlyReport = ({ dashboardData, isLoading, error }: MonthlyReportProps) 
     )
   } else {
     return (
-      <div className="w-full">
+      <div className="w-full flex-1 min-h-0 flex flex-col justify-center">
         <div className="text-center py-8">
           <p className="text-slate-500">No monthly data available yet.</p>
         </div>
