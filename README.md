@@ -201,16 +201,6 @@ docker-compose up --build
 
 ---
 
-## Testing
-- **Backend**: Run tests with
-  ```bash
-  cd server
-  pytest app/tests/ -v
-  ```
-- **Frontend**: Add tests as needed (Jest/React Testing Library recommended)
-
----
-
 ## Contributing
 1. Fork the repo & create a feature branch
 2. Make your changes (with clear commits)
