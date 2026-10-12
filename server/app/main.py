@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
 from app.db.session import initiate_database
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
+from app.core.bootstrap import ensure_admin_user
 from fastapi.openapi.utils import get_openapi
 from app.core.rate_limiter import rate_limit_middleware
 from app.core.exceptions import setup_exception_handlers
@@ -41,6 +42,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def on_startup():
     await initiate_database()
+    await ensure_admin_user()
 
 @app.get("/")
 async def root():

@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Optional
 
 class Settings(BaseSettings):
     MONGO_URI: str
@@ -33,6 +34,11 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = None
     # When false (local/dev), signup auto-verifies and login skips the email check.
     EMAIL_VERIFICATION_ENABLED: bool = True
+
+    # Bootstrap admin (created once on startup if missing). Leave unset to skip.
+    ADMIN_EMAIL: Optional[str] = None
+    ADMIN_PASSWORD: Optional[str] = None
+    ADMIN_FULL_NAME: str = "Admin"
 
     class Config:
         env_file = ".env"
