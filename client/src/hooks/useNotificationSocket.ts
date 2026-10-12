@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { authSelector } from "../redux/slices/authSlice";
 import { notificationAPI } from "../redux/api/notificationAPI";
+import { AppDispatch } from "../redux/store";
 import { NotificationOut, NotificationWsMessage } from "../types/Notification";
 
 const PING_MS = 25_000;
@@ -20,7 +21,7 @@ function buildWsUrl(token: string): string {
  */
 export function useNotificationSocket() {
   const auth = useSelector(authSelector);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const wsRef = useRef<WebSocket | null>(null);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
