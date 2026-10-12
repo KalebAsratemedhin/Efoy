@@ -5,7 +5,6 @@ import { useGetDoctorByIdQuery } from "../../redux/api/doctorAPI";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
 import { PageLoader } from "../utils/Spinner";
-import Error from "../utils/Error";
 import BackButton from "../utils/BackButton";
 import { useCreateBookingMutation } from "../../redux/api/bookingAPI";
 import TimeDate from "./TimeDate";
@@ -13,6 +12,7 @@ import { FaClock, FaInfoCircle, FaVideo, FaCreditCard } from "react-icons/fa";
 import { authSelector } from "../../redux/slices/authSlice";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 interface FormData {
   appointmentDate: string;
@@ -63,11 +63,20 @@ const BookingPage = () => {
     await createBooking(bookingData).unwrap();
   };
 
-  if (!canBook) return <PageLoader label="Redirecting…" />;
-  if (isLoading || isCreateLoading) return <PageLoader label="Loading…" />;
-  if (isError || isCreateError) return <Error error={error || createError} />;
+  useErrorToast(isError, error, "booking-page-doctor");
 
-  if (!isSuccess || !doctor) return null;
+  if (!canBook) return <PageLoader label="Redirecting…" />;
+  if (isLoading) return <PageLoader label="Loading…" />;
+
+  if (isError || !isSuccess || !doctor) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-16 px-4">
+        <BackButton to="/doctors" label="Back to doctors" className="mb-5 mx-auto" />
+        <p className="text-ink font-medium">This doctor couldn’t be loaded for booking.</p>
+        <p className="text-slate-500 text-sm mt-1">Please try again in a moment.</p>
+      </div>
+    );
+  }
 
   const name = doctor.userId?.fullName ?? "Doctor";
   const doctorUserId = doctor.userId?.id;
@@ -226,9 +235,10 @@ const BookingPage = () => {
         {!isCreateSuccess && (
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-accent text-white rounded-xl font-semibold hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent/50 transition-colors"
+            disabled={isCreateLoading}
+            className="w-full py-3 px-4 bg-accent text-white rounded-xl font-semibold hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent/50 transition-colors disabled:opacity-70"
           >
-            Book appointment
+            {isCreateLoading ? "Booking…" : "Book appointment"}
           </button>
         )}
       </form>

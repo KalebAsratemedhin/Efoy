@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { useGetDoctorsQuery } from "../../redux/api/doctorAPI";
 import DoctorCard from "../doctors/DoctorCard";
-import Error from "../utils/Error";
 import { Skeleton } from "../utils/Spinner";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const TOP_DOCTORS_LIMIT = 3;
 
@@ -31,6 +31,8 @@ const FeaturedDoctors = () => {
     sort: "rating_desc",
   });
 
+  useErrorToast(isError, error, "featured-doctors");
+
   const doctors = data?.items ?? [];
 
   if (isLoading) {
@@ -49,13 +51,23 @@ const FeaturedDoctors = () => {
     );
   }
 
-  if (isError) return <Error error={error} />;
-
-  if (doctors.length === 0) {
+  if (isError || doctors.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <p className="text-ink font-medium">No doctors available yet</p>
-        <p className="text-slate-500 text-sm mt-1">Check back soon for featured specialists.</p>
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-10 text-center">
+        <p className="text-ink font-medium">
+          {isError ? "Doctors couldn’t be loaded right now" : "No doctors available yet"}
+        </p>
+        <p className="text-slate-500 text-sm mt-1">
+          {isError ? "Please try again in a moment." : "Check back soon for featured specialists."}
+        </p>
+        {isError && (
+          <Link
+            to="/doctors"
+            className="inline-flex mt-4 text-sm font-medium text-accent hover:text-accent-hover"
+          >
+            Try the doctors page
+          </Link>
+        )}
       </div>
     );
   }

@@ -1,6 +1,5 @@
 import { useGetDoctorsQuery, useGetSpecialitiesQuery } from "../../redux/api/doctorAPI";
 import { PageLoader } from "../utils/Spinner";
-import Error from "../utils/Error";
 import DoctorCard from "./DoctorCard";
 import Pagination, { parsePaginationMeta } from "../utils/Pagination";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,6 +8,7 @@ import { Doctor, DoctorListParams, DoctorSort } from "../../types/User";
 import { FaSearch, FaTimes } from "react-icons/fa";
 import { readNumberParam } from "../../lib/queryParams";
 import AdvancedFilters from "../utils/AdvancedFilters";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const SORT_OPTIONS: { value: DoctorSort; label: string }[] = [
   { value: "rating_desc", label: "Highest rated" },
@@ -76,6 +76,7 @@ const DoctorsList = ({ embedded = false }: DoctorsListProps) => {
   });
 
   const { isLoading, isFetching, isSuccess, isError, error, data } = useGetDoctorsQuery(filters);
+  useErrorToast(isError, error, "doctors-list");
 
   const meta = parsePaginationMeta(data, filters.page ?? 1, filters.limit ?? 9);
   const doctors: Doctor[] = data?.items ?? [];
@@ -101,7 +102,6 @@ const DoctorsList = ({ embedded = false }: DoctorsListProps) => {
   };
 
   if (isLoading && !data) return <PageLoader label="Loading doctors…" />;
-  if (isError) return <Error error={error} />;
 
   const content = (
     <>
@@ -278,21 +278,17 @@ const DoctorsList = ({ embedded = false }: DoctorsListProps) => {
         <p className="text-xs text-slate-500 mb-3">Updating results…</p>
       )}
 
-      {isSuccess && doctors.length === 0 ? (
-        <div
-          className={
-            embedded
-              ? "bg-elevated/80 rounded-2xl border border-white/5 p-12 text-center"
-              : "bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm"
-          }
-        >
-          <h3 className={`text-lg font-semibold ${embedded ? "text-white" : "text-ink"}`}>
-            No doctors found
+      {(isError || (isSuccess && doctors.length === 0)) ? (
+        <div className="border border-dashed border-slate-200 rounded-xl bg-white py-12 px-6 text-center">
+          <h3 className="text-lg font-semibold text-ink">
+            {isError ? "Couldn’t load doctors" : "No doctors found"}
           </h3>
-          <p className={embedded ? "text-slate-400 mt-1" : "text-slate-500 text-sm mt-1"}>
-            {hasActiveFilters
-              ? "Try adjusting your filters."
-              : "No doctors are available at the moment."}
+          <p className="text-slate-500 text-sm mt-1">
+            {isError
+              ? "Please try again in a moment."
+              : hasActiveFilters
+                ? "Try adjusting your filters."
+                : "No doctors are available at the moment."}
           </p>
         </div>
       ) : (

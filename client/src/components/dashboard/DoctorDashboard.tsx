@@ -8,7 +8,6 @@ import { useGetCurrentUserQuery } from "../../redux/api/userAPI";
 import { useGetDoctorDashboardQuery } from "../../redux/api/dashboardAPI";
 import { useGetDoctorPrescriptionsQuery } from "../../redux/api/prescriptionAPI";
 import { PageLoader } from "../utils/Spinner";
-import Error from "../utils/Error";
 import {
   FaPills,
   FaCalendarCheck,
@@ -18,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { Prescription } from "../../types/Prescription";
 import PrescriptionDisplay from "../appointments/PrescriptionDisplay";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const DoctorDashboard = () => {
   const {
@@ -29,14 +29,16 @@ const DoctorDashboard = () => {
   const {
     data: dashboardData,
     isLoading: isDashboardLoading,
+    isError: isDashboardError,
     error: dashboardError,
   } = useGetDoctorDashboardQuery();
   const { data: prescriptionsData } = useGetDoctorPrescriptionsQuery({ page: 1, limit: 5 });
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
 
+  useErrorToast(isUserError, userError, "doctor-dashboard-user");
+  useErrorToast(isDashboardError, dashboardError, "doctor-dashboard");
+
   if (isUserLoading || isDashboardLoading) return <PageLoader label="Loading dashboard…" />;
-  if (isUserError) return <Error error={userError} />;
-  if (dashboardError) return <Error error={dashboardError} />;
 
   return (
     <div className="max-w-7xl mx-auto">

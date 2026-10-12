@@ -1,32 +1,21 @@
-import { SerializedError } from "@reduxjs/toolkit";
-import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { extractErrorMessage } from "../../utils/errorHandler";
 
-const Error = ({ error }: { error: SerializedError | FetchBaseQueryError | string | undefined }) => {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="bg-red-100 text-red-600 border border-red-300 rounded-lg p-4">
-          <div className="flex items-center  w-72 h-20">
-            <svg
-              className="w-15 h-10 mr-2"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12c0 5.523-4.477 10-10 10S1 17.523 1 12 5.477 2 11 2s10 4.477 10 10z"
-              />
-            </svg>
-            <span className="font-heading">{extractErrorMessage(error)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
-  export default Error;
-  
+/**
+ * Legacy mount-to-toast helper. Prefer `useErrorToast` in new code.
+ * Renders nothing — errors are surfaced via toast, not page cards.
+ */
+const Error = ({ error }: { error: unknown }) => {
+  useEffect(() => {
+    if (error == null) return;
+    const message = extractErrorMessage(error);
+    toast.error(message, { id: `err-${message}` });
+    // Mount-only so remounts on new failures re-toast
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return null;
+};
+
+export default Error;

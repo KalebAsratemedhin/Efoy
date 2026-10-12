@@ -8,6 +8,7 @@ import { PageLoader } from '../utils/Spinner';
 import Pagination, { parsePaginationMeta } from '../utils/Pagination';
 import { useSelector } from 'react-redux';
 import { authSelector } from '../../redux/slices/authSlice';
+import { useErrorToast } from '../../hooks/useErrorToast';
 
 const PrescriptionList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -18,20 +19,31 @@ const PrescriptionList: React.FC = () => {
   const user = useSelector(authSelector);
   const isDoctor = user.role === 'doctor';
 
-  const { data: patientPrescriptionsData, isLoading: isPatientLoading, isError: isPatientError } = useGetPatientPrescriptionsQuery({
-    page: currentPage,
-    limit: pageSize
-  }, { skip: isDoctor });
+  const {
+    data: patientPrescriptionsData,
+    isLoading: isPatientLoading,
+    isError: isPatientError,
+    error: patientError,
+  } = useGetPatientPrescriptionsQuery(
+    { page: currentPage, limit: pageSize },
+    { skip: isDoctor }
+  );
 
-  const { data: doctorPrescriptionsData, isLoading: isDoctorLoading, isError: isDoctorError } = useGetDoctorPrescriptionsQuery({
-    page: currentPage,
-    limit: pageSize
-  }, { skip: !isDoctor });
+  const {
+    data: doctorPrescriptionsData,
+    isLoading: isDoctorLoading,
+    isError: isDoctorError,
+    error: doctorError,
+  } = useGetDoctorPrescriptionsQuery(
+    { page: currentPage, limit: pageSize },
+    { skip: !isDoctor }
+  );
 
   const prescriptionsData = isDoctor ? doctorPrescriptionsData : patientPrescriptionsData;
   const isLoading = isDoctor ? isDoctorLoading : isPatientLoading;
   const isError = isDoctor ? isDoctorError : isPatientError;
-
+  const listError = isDoctor ? doctorError : patientError;
+  useErrorToast(isError, listError, "prescriptions-list");
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -53,21 +65,21 @@ const PrescriptionList: React.FC = () => {
 
   if (isLoading) return <PageLoader label="Loading prescriptions…" />;
 
-  if (isError) {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white border border-slate-200 rounded-lg p-6 text-center text-red-600">Failed to load prescriptions. Please try again.</div>
-      </div>
-    );
-  }
-
-  if (!prescriptionsData?.items || prescriptionsData.items.length === 0) {
+  if (isError || !prescriptionsData?.items || prescriptionsData.items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold text-ink mb-1">Prescriptions</h1>
-        <p className="text-slate-600 text-sm mb-6">{isDoctor ? 'Manage prescriptions you create for patients.' : 'View your medical prescriptions.'}</p>
-        <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-600 shadow-sm">
-          {isDoctor ? "You haven't created any prescriptions yet." : "You don't have any prescriptions yet."}
+        <p className="text-slate-600 text-sm mb-6">
+          {isDoctor
+            ? "Manage prescriptions you create for patients."
+            : "View your medical prescriptions."}
+        </p>
+        <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center text-slate-600">
+          {isError
+            ? "Prescriptions couldn’t be loaded. Please try again."
+            : isDoctor
+              ? "You haven't created any prescriptions yet."
+              : "You don't have any prescriptions yet."}
         </div>
       </div>
     );

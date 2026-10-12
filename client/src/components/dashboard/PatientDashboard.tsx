@@ -20,10 +20,10 @@ import { useFindCurrentUserFavoritesQuery } from "../../redux/api/ratingAPI";
 import { useGetPatientPrescriptionsQuery } from "../../redux/api/prescriptionAPI";
 import { useFindCurrentUserBookingsQuery } from "../../redux/api/bookingAPI";
 import { PageLoader } from "../utils/Spinner";
-import Error from "../utils/Error";
 import { formatTime } from "../../utils/timeUtils";
 import { Prescription } from "../../types/Prescription";
 import PrescriptionDisplay from "../appointments/PrescriptionDisplay";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const PatientDashboard = () => {
   const {
@@ -35,6 +35,7 @@ const PatientDashboard = () => {
   const {
     data: dashboardData,
     isLoading: isDashboardLoading,
+    isError: isDashboardError,
     error: dashboardError,
   } = useGetPatientDashboardQuery();
   const { data: favoritesData } = useFindCurrentUserFavoritesQuery();
@@ -42,9 +43,10 @@ const PatientDashboard = () => {
   const { data: bookingsData } = useFindCurrentUserBookingsQuery({ page: 1, limit: 10 });
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
 
+  useErrorToast(isUserError, userError, "patient-dashboard-user");
+  useErrorToast(isDashboardError, dashboardError, "patient-dashboard");
+
   if (isUserLoading || isDashboardLoading) return <PageLoader label="Loading dashboard…" />;
-  if (isUserError) return <Error error={userError} />;
-  if (dashboardError) return <Error error={dashboardError} />;
 
   const unpaid = (bookingsData?.items ?? []).filter((b) => b.paymentStatus === "unpaid");
 

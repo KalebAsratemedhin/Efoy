@@ -4,9 +4,9 @@ import { useGetDoctorRatingsQuery } from "../../redux/api/ratingAPI";
 import { useGetCurrentUserQuery } from "../../redux/api/userAPI";
 import CommentCard from "./CommentCard";
 import { Skeleton } from "../utils/Spinner";
-import Error from "../utils/Error";
 import InfiniteScrollContainer from "../utils/InfiniteScrollContainer";
 import { CommentPopulated } from "../../types/Comment";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const PAGE_SIZE = 8;
 
@@ -58,6 +58,8 @@ const CommentList = ({ doctorId }: { doctorId: string }) => {
     return map;
   }, [ratingsData]);
 
+  useErrorToast(isError, error, "comment-list");
+
   const hasMore = Boolean(data?.has_next);
   const showInitialLoading = isLoading && page === 1 && items.length === 0;
 
@@ -69,12 +71,13 @@ const CommentList = ({ doctorId }: { doctorId: string }) => {
       </div>
     );
   }
-  if (isError) return <Error error={error} />;
 
-  if (!isLoading && items.length === 0) {
+  if (isError || (!isLoading && items.length === 0)) {
     return (
       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center">
-        <p className="text-slate-600 text-sm">No reviews yet.</p>
+        <p className="text-slate-600 text-sm">
+          {isError ? "Reviews couldn’t be loaded." : "No reviews yet."}
+        </p>
       </div>
     );
   }

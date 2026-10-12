@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { InlineSpinner, PageLoader } from "../utils/Spinner";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
-import Error from "../utils/Error";
 import BackButton from "../utils/BackButton";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
@@ -15,6 +14,7 @@ import { useFindCurrentUserRatingQuery } from "../../redux/api/ratingAPI";
 import RatingStars from "../rating/RatingStars";
 import { FaBriefcase, FaGraduationCap, FaDollarSign } from "react-icons/fa";
 import CareHistorySection from "./CareHistorySection";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 interface FormData {
   appointmentDate: string;
@@ -84,8 +84,18 @@ const BookingDetails = () => {
     await updateBooking({ id: id as string, update: formData }).unwrap();
   };
 
+  useErrorToast(isError, error, "booking-details");
+
   if (isLoading) return <PageLoader label="Loading appointment…" />;
-  if (isError) return <Error error={error} />;
+  if (isError) {
+    return (
+      <div className="max-w-7xl mx-auto text-center py-16">
+        <BackButton to="/appointments" label="Back to Appointments" className="mb-5 mx-auto" />
+        <p className="text-ink font-medium">This appointment couldn’t be loaded.</p>
+        <p className="text-slate-500 text-sm mt-1">Please try again in a moment.</p>
+      </div>
+    );
+  }
   if (!isSuccess || !data) return null;
 
   const canDoctorFinish =

@@ -1,8 +1,8 @@
 import { useFindCurrentUserBookingsQuery } from "../../redux/api/bookingAPI";
 import { useGetSpecialitiesQuery } from "../../redux/api/doctorAPI";
 import { PageLoader } from "../utils/Spinner";
-import Error from "../utils/Error";
 import BookingCardPatient from "./BookingCardPatient";
+import { useErrorToast } from "../../hooks/useErrorToast";
 import { authSelector } from "../../redux/slices/authSlice";
 import { useSelector } from "react-redux";
 import BookingCardDoctor from "./BookingCardDoctor";
@@ -189,8 +189,9 @@ const BookingList = () => {
     setSearchParams(next, { replace: true });
   };
 
+  useErrorToast(isError, error, "bookings-list");
+
   if (isLoading && !data) return <PageLoader label="Loading appointments…" />;
-  if (isError) return <Error error={error} />;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -473,12 +474,14 @@ const BookingList = () => {
               : "No upcoming appointments in the queue."
           }
         />
-      ) : isSuccess && bookings.length === 0 ? (
-        <div className="border border-slate-200 rounded-xl bg-white py-12 px-6 text-center shadow-sm">
+      ) : isError || (isSuccess && bookings.length === 0) ? (
+        <div className="border border-dashed border-slate-200 rounded-xl bg-white py-12 px-6 text-center">
           <p className="text-slate-600 text-sm">
-            {hasActiveFilters
-              ? "No appointments match your filters."
-              : "You don't have any appointments yet."}
+            {isError
+              ? "Appointments couldn’t be loaded. Please try again."
+              : hasActiveFilters
+                ? "No appointments match your filters."
+                : "You don't have any appointments yet."}
           </p>
         </div>
       ) : (

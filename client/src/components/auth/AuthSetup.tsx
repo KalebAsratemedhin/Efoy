@@ -1,30 +1,31 @@
-import { Outlet} from "react-router-dom"
-
-import { useGetCurrentUserQuery } from "../../redux/api/userAPI"
-import { PageLoader } from "../utils/Spinner"
-import Error from "../utils/Error"
-import { CustomSerializedError } from "../../types/CustomSerializedError"
+import { Navigate, Outlet } from "react-router-dom";
+import { useGetCurrentUserQuery } from "../../redux/api/userAPI";
+import { PageLoader } from "../utils/Spinner";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const AuthSetup = () => {
-  const {isLoading: isUserLoading, isError: isUserError, error: userError} = useGetCurrentUserQuery(undefined, {
-    skip: !localStorage.getItem('accessToken')
-  })
+  const hasToken = Boolean(localStorage.getItem("accessToken"));
+  const {
+    isLoading: isUserLoading,
+    isError: isUserError,
+    error: userError,
+  } = useGetCurrentUserQuery(undefined, {
+    skip: !hasToken,
+  });
 
+  useErrorToast(isUserError, userError, "auth-setup");
 
-  if(isUserLoading)
-    return <PageLoader label="Loading…" />
-    
-  if(isUserError){
-    const error = userError as CustomSerializedError
-  
-    return <Error error={error} />
-
+  if (!hasToken) {
+    return <Navigate to="/signin" replace />;
   }
-  return (
-    <>
-        <Outlet />
-    </>
-  )
-}
 
-export default AuthSetup
+  if (isUserLoading) return <PageLoader label="Loading…" />;
+
+  if (isUserError) {
+    return <Navigate to="/signin" replace />;
+  }
+
+  return <Outlet />;
+};
+
+export default AuthSetup;

@@ -1,18 +1,17 @@
 import { useAdminStatsQuery, useGetCurrentUserQuery } from "../../redux/api/userAPI";
 import { PageLoader } from "../utils/Spinner";
-import Error from "../utils/Error";
 import { Link } from "react-router-dom";
 import { FaUserMd, FaPlusCircle, FaUsers, FaCog, FaChevronRight } from "react-icons/fa";
 import AdminStats from "./AdminStats";
 import DashboardHeader from "./DashboardHeader";
+import { useErrorToast } from "../../hooks/useErrorToast";
 
 const AdminDashboard = () => {
   const { data: user } = useGetCurrentUserQuery();
   const { isLoading, isError, isSuccess, error, data } = useAdminStatsQuery();
+  useErrorToast(isError, error, "admin-dashboard");
 
   if (isLoading) return <PageLoader label="Loading dashboard…" />;
-  if (isError) return <Error error={error} />;
-  if (!isSuccess) return null;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -22,11 +21,18 @@ const AdminDashboard = () => {
       />
 
       <section className="mb-6">
-        <AdminStats
-          doctorsCount={data?.doctorsCount ?? 0}
-          patientsCount={data?.patientsCount ?? 0}
-          appointmentsCount={data?.appointmentsCount ?? 0}
-        />
+        {isError || !isSuccess ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white py-10 px-6 text-center">
+            <p className="text-ink font-medium">Stats couldn’t be loaded</p>
+            <p className="text-slate-500 text-sm mt-1">Please try again shortly.</p>
+          </div>
+        ) : (
+          <AdminStats
+            doctorsCount={data?.doctorsCount ?? 0}
+            patientsCount={data?.patientsCount ?? 0}
+            appointmentsCount={data?.appointmentsCount ?? 0}
+          />
+        )}
       </section>
 
       <section className="mb-6">
