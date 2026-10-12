@@ -51,13 +51,12 @@ const AppRoutes = () => {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/google-auth" element={<GoogleAuth />} />
+                <Route path="/doctors" element={<Doctors />} />
+                <Route path="/doctors/:id" element={<DoctorDetails />} />
 
                 <Route element={<AuthSetup />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/doctors" element={<Doctors />} />
-                    <Route path="/doctors/:id" element={<DoctorDetails />} />
-
                     <Route path="/book/:id" element={<Book />} />
                     <Route path="/appointments" element={<Appointments />} />
                     <Route path="/appointments/:id" element={<Appointments />} />
@@ -68,10 +67,6 @@ const AppRoutes = () => {
                     <Route path="/payment/success" element={<PaymentSuccess />} />
                     <Route path="/payment/cancel" element={<Payment />} />
                 </Route>
-
-
-
-
             </Route>
 
             {/* Video call route - accessible directly */}

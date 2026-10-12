@@ -55,12 +55,14 @@ const Header = ({
   return (
     <nav className="w-full sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div className={`${isAppLayout ? "px-4 sm:px-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"}`}>
-        <div className="flex items-center h-16 gap-3 sm:gap-4">
+        <div className="flex items-center h-16 gap-5 sm:gap-7 lg:gap-10">
           <div className="flex items-center gap-3 shrink-0">
-            <CgMenuLeftAlt
-              onClick={onSidebarToggle}
-              className="w-6 h-6 sm:hidden text-ink hover:text-accent transition-colors cursor-pointer shrink-0"
-            />
+            {isAppLayout && (
+              <CgMenuLeftAlt
+                onClick={onSidebarToggle}
+                className="w-6 h-6 sm:hidden text-ink hover:text-accent transition-colors cursor-pointer shrink-0"
+              />
+            )}
             {showBrandLogo && (
               <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
                 <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent/15 transition-colors">
@@ -74,13 +76,7 @@ const Header = ({
           </div>
 
           {pathname === "/" && (
-            <div className="hidden md:flex items-center gap-6 shrink-0">
-              <Link
-                to="/"
-                className="px-1 py-2 text-sm font-medium text-slate-700 hover:text-accent transition-colors"
-              >
-                Home
-              </Link>
+            <div className="hidden md:flex items-center shrink-0">
               <Link
                 to="/doctors"
                 className="px-1 py-2 text-sm font-medium text-slate-700 hover:text-accent transition-colors"
@@ -138,14 +134,14 @@ const Header = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto pl-2 sm:pl-4">
             {authState.id ? (
               <>
                 <NotificationBell />
                 <AuthHeaderInfo />
               </>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <Link
                   to="/signin"
                   className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-accent transition-colors"

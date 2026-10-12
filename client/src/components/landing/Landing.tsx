@@ -1,4 +1,4 @@
-import DoctorsList from "../doctors/DoctorsList";
+import FeaturedDoctors from "./FeaturedDoctors";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Stethoscope, CalendarCheck, Shield } from "lucide-react";
@@ -133,11 +133,9 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div className="mb-12" {...fadeUp}>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-ink mb-2">Meet our doctors</h2>
-            <p className="text-slate-600">Browse and book with verified specialists.</p>
+            <p className="text-slate-600">Top-rated specialists ready to care for you.</p>
           </motion.div>
-          <div className="overflow-x-auto">
-            <DoctorsList embedded />
-          </div>
+          <FeaturedDoctors />
         </div>
       </section>
 
