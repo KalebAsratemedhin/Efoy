@@ -5,6 +5,7 @@ import { DoctorCreate } from "../../types/Doctor";
 import { InlineSpinner } from "../utils/Spinner";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
+import { PHONE_NUMBER_MAX_LENGTH, phoneNumberFieldOptions } from "../../lib/phone";
 
 const inputClass =
   "w-full px-3 py-2.5 border border-slate-200 rounded-lg text-ink placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
@@ -74,10 +75,14 @@ const AdminCreateDoctor = () => {
               <input
                 id="phoneNumber"
                 type="tel"
-                placeholder="+1 234 567 8900"
-                {...register("phoneNumber")}
+                placeholder="0911…2345"
+                maxLength={PHONE_NUMBER_MAX_LENGTH}
+                {...register("phoneNumber", phoneNumberFieldOptions)}
                 className={inputClass}
               />
+              {errors.phoneNumber && (
+                <p className="text-red-500 text-sm mt-1">{errors.phoneNumber.message}</p>
+              )}
             </div>
           </div>
         </div>

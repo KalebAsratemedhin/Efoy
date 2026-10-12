@@ -1,5 +1,14 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { AdminStats, Doctor, User, UserUpdate, PaginatedResponse } from "../../types/User";
+import {
+  AdminStats,
+  Doctor,
+  RestrictUserRequest,
+  User,
+  UserUpdate,
+  PaginatedResponse,
+} from "../../types/User";
+import { doctorAPI } from "./doctorAPI";
+
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const userAPI = createApi({
@@ -101,6 +110,38 @@ export const userAPI = createApi({
             invalidatesTags: ['User', 'Doctor']
         }),
 
+        restrictUser: builder.mutation<User, { id: string; body?: RestrictUserRequest }>({
+            query: ({ id, body }) => ({
+                url: `/${id}/restrict`,
+                method: 'Post',
+                body: body ?? {},
+            }),
+            invalidatesTags: ['User'],
+            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+                try {
+                    await queryFulfilled;
+                    dispatch(doctorAPI.util.invalidateTags(['Doctor']));
+                } catch {
+                    /* surfaced by caller */
+                }
+            },
+        }),
+
+        unrestrictUser: builder.mutation<User, string>({
+            query: (id) => ({
+                url: `/${id}/unrestrict`,
+                method: 'Post',
+            }),
+            invalidatesTags: ['User'],
+            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+                try {
+                    await queryFulfilled;
+                    dispatch(doctorAPI.util.invalidateTags(['Doctor']));
+                } catch {
+                    /* surfaced by caller */
+                }
+            },
+        }),
     })
 })
 
@@ -113,5 +154,7 @@ export const {
     useUpdateProfilePictureMutation,
     useAdminStatsQuery,
     useGetAllUsersQuery,
-    useDeleteUserMutation
+    useDeleteUserMutation,
+    useRestrictUserMutation,
+    useUnrestrictUserMutation,
 } = userAPI

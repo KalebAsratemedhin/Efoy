@@ -17,6 +17,9 @@ class User(BaseDocument):
     isVerified: bool = False
     verificationToken: Optional[str] = None
     verificationExpires: Optional[datetime] = None
+    isRestricted: bool = False
+    restrictedAt: Optional[datetime] = None
+    restrictionReason: Optional[str] = None
 
     class Settings:
         name = "users"
@@ -27,6 +30,8 @@ class User(BaseDocument):
             "phoneNumber",  # For phone-based queries
             "created_at",  # For time-based queries
             "verificationToken",  # For email verification
+            "isRestricted",
+            [("role", 1), ("isRestricted", 1)],
         ]
 
     class Config:

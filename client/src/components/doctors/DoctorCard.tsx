@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Doctor } from "../../types/User";
-import { FaStar } from "react-icons/fa";
+import { FaBan, FaStar } from "react-icons/fa";
 import { authSelector } from "../../redux/slices/authSlice";
 
 interface DoctorCardProps {
@@ -33,6 +33,8 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
   const price = doctor.sessionPrice != null ? doctor.sessionPrice : 0;
   const profileHref = `/doctors/${doctor.userId.id}`;
   const bookHref = `/book/${doctor.userId.id}`;
+  const isRestricted = Boolean(doctor.userId.isRestricted);
+  const showRestrictedBadge = auth.role === "admin" && isRestricted;
 
   return (
     <div className="group flex h-full gap-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
@@ -46,10 +48,18 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
       </Link>
 
       <div className="min-w-0 flex-1 flex flex-col">
-        <Link to={profileHref}>
-          <h3 className="text-lg font-semibold text-ink truncate group-hover:text-accent transition-colors">
-            Dr. {name}
-          </h3>
+        <Link to={profileHref} className="min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="text-lg font-semibold text-ink truncate group-hover:text-accent transition-colors">
+              Dr. {name}
+            </h3>
+            {showRestrictedBadge && (
+              <span className="inline-flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-800">
+                <FaBan className="w-2.5 h-2.5" />
+                Restricted
+              </span>
+            )}
+          </div>
         </Link>
         <p className="text-slate-600 text-sm truncate mt-0.5">{doctor.speciality}</p>
         <p className="text-slate-500 text-sm mt-1.5">
@@ -62,7 +72,7 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
 
         <div className="mt-auto pt-3 flex items-center justify-between gap-3">
           <span className="text-base font-semibold text-ink">${price}</span>
-          {canBook ? (
+          {canBook && !isRestricted ? (
             <Link
               to={bookHref}
               className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors"

@@ -6,6 +6,12 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException
 from typing import Dict, List, Optional
 from app.core.security import pwd_context
+from app.core.account_status import (
+    get_restricted_doctor_user_ids,
+    filter_out_ids,
+    is_user_restricted,
+    assert_doctor_publicly_visible,
+)
 
 DOCTOR_SORT_OPTIONS = {
     "rating_desc": [("rating", -1)],
@@ -52,6 +58,7 @@ class DoctorService:
         min_price: Optional[float] = None,
         max_price: Optional[float] = None,
         sort: str = "rating_desc",
+        include_restricted: bool = False,
     ) -> dict:
         if sort not in DOCTOR_SORT_OPTIONS:
             raise HTTPException(
@@ -60,6 +67,7 @@ class DoctorService:
             )
 
         match: dict = {}
+        restricted_ids = set() if include_restricted else await get_restricted_doctor_user_ids()
 
         if speciality:
             match["speciality"] = {
@@ -84,7 +92,7 @@ class DoctorService:
                 "role": "doctor",
                 "fullName": {"$regex": re.escape(term), "$options": "i"},
             }).to_list()
-            user_ids_by_name = {user.id for user in users_by_name}
+            user_ids_by_name = {user.id for user in users_by_name if not is_user_restricted(user) or include_restricted}
 
             doctors_by_speciality = await Doctor.find({
                 "speciality": {"$regex": re.escape(term), "$options": "i"},
@@ -96,9 +104,13 @@ class DoctorService:
                 user_ids_by_speciality.add(uid)
 
             user_ids = list(user_ids_by_name | user_ids_by_speciality)
+            if not include_restricted:
+                user_ids = filter_out_ids(user_ids, restricted_ids)
             if not user_ids:
                 return _empty_doctor_page(page, limit)
             match["userId.id"] = {"$in": user_ids}
+        elif restricted_ids:
+            match["userId.id"] = {"$nin": list(restricted_ids)}
 
         needs_experience = (
             min_experience is not None
@@ -149,8 +161,16 @@ class DoctorService:
         doctors_out: List[DoctorOut] = []
         for raw in raw_items:
             doctor = await Doctor.get(raw["_id"], fetch_links=True)
-            if doctor:
-                doctors_out.append(DoctorOut.model_validate(doctor.model_dump()))
+            if not doctor:
+                continue
+            linked_user = doctor.userId
+            if (
+                not include_restricted
+                and isinstance(linked_user, User)
+                and is_user_restricted(linked_user)
+            ):
+                continue
+            doctors_out.append(DoctorOut.model_validate(doctor.model_dump()))
 
         total_pages = (total + limit - 1) // limit if total else 0
         return {
@@ -164,15 +184,26 @@ class DoctorService:
         }
 
     @staticmethod
-    async def list_specialities() -> List[str]:
-        specialities = await Doctor.distinct("speciality")
-        return sorted(s for s in specialities if s)
+    async def list_specialities(*, include_restricted: bool = False) -> List[str]:
+        if include_restricted:
+            specialities = await Doctor.distinct("speciality")
+            return sorted(s for s in specialities if s)
+
+        restricted_ids = await get_restricted_doctor_user_ids()
+        doctors = await Doctor.find().to_list()
+        specialities = set()
+        for doc in doctors:
+            link = doc.userId
+            uid = link.ref.id if hasattr(link, "ref") else getattr(link, "id", None)
+            if uid in restricted_ids:
+                continue
+            if doc.speciality:
+                specialities.add(doc.speciality)
+        return sorted(specialities)
 
     @staticmethod
-    async def find_one_doctor(id: str) -> dict:
-        user = await User.get(PydanticObjectId(id))
-        if not user:
-            raise HTTPException(status_code=404, detail="Doctor not found")
+    async def find_one_doctor(id: str, *, include_restricted: bool = False) -> dict:
+        await assert_doctor_publicly_visible(id, allow_restricted=include_restricted)
 
         doctor = await Doctor.find_one(Doctor.userId.id == PydanticObjectId(id), fetch_links=True)
         if not doctor:

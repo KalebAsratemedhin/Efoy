@@ -9,6 +9,7 @@ import RatingStars from "../rating/RatingStars";
 import BackButton from "../utils/BackButton";
 import DoctorBoardSection from "./DoctorBoardSection";
 import DoctorQaSection from "./DoctorQaSection";
+import AccountRestrictionPanel from "../admin/AccountRestrictionPanel";
 import {
   FaGraduationCap,
   FaBriefcase,
@@ -19,6 +20,7 @@ import {
   FaPen,
   FaBookOpen,
   FaComments,
+  FaBan,
 } from "react-icons/fa";
 import { useFindCurrentUserBookingsQuery } from "../../redux/api/bookingAPI";
 import { useMemo, useState } from "react";
@@ -49,6 +51,8 @@ const DoctorProfile = ({ doctor }: { doctor: Doctor }) => {
 
   const canBook = auth.role === "patient";
   const isOwnProfile = auth.id === doctorUserId;
+  const isAdmin = auth.role === "admin";
+  const isRestricted = Boolean(doctor.userId?.isRestricted);
 
   const { data: bookingsData, isLoading: bookingsLoading } = useFindCurrentUserBookingsQuery(
     { page: 1, limit: 100, status: "finished" },
@@ -92,7 +96,15 @@ const DoctorProfile = ({ doctor }: { doctor: Doctor }) => {
               </div>
 
               <div className="mt-4 text-center sm:text-left">
-                <h1 className="text-2xl font-bold text-ink">Dr. {name}</h1>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h1 className="text-2xl font-bold text-ink">Dr. {name}</h1>
+                  {isRestricted && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-800">
+                      <FaBan className="w-2.5 h-2.5" />
+                      Restricted
+                    </span>
+                  )}
+                </div>
                 <p className="text-accent font-medium mt-1">{doctor.speciality}</p>
               </div>
 
@@ -127,7 +139,7 @@ const DoctorProfile = ({ doctor }: { doctor: Doctor }) => {
                 </div>
               </dl>
 
-              {canBook && !isOwnProfile && doctorUserId && (
+              {canBook && !isOwnProfile && !isRestricted && doctorUserId && (
                 <Link
                   to={`/book/${doctorUserId}`}
                   className="mt-6 w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors"
@@ -137,6 +149,16 @@ const DoctorProfile = ({ doctor }: { doctor: Doctor }) => {
               )}
             </div>
           </div>
+
+          {isAdmin && doctorUserId && (
+            <AccountRestrictionPanel
+              userId={doctorUserId}
+              accountLabel="doctor"
+              isRestricted={isRestricted}
+              restrictedAt={doctor.userId?.restrictedAt}
+              restrictionReason={doctor.userId?.restrictionReason}
+            />
+          )}
 
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
             <div className="flex items-center gap-2 mb-4">

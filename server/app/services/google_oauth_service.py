@@ -115,6 +115,12 @@ class GoogleOAuthService:
     @staticmethod
     def create_auth_response(user: User) -> str:
         """Create JWT token and redirect URL for authenticated user"""
+        if getattr(user, "isRestricted", False):
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=403,
+                detail="Your account has been restricted. Contact support for help.",
+            )
         payload = {"id": str(user.id), "role": user.role}
         token = jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
         

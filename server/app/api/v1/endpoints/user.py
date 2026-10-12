@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from typing import List
-from app.schemas.user import UserOut, UserUpdate
+from app.schemas.user import UserOut, UserUpdate, RestrictUserRequest
 from app.schemas.common import PaginatedResponse
 from app.db.models.user import User
 from app.core.security import get_current_user, admin_required
+from app.services.user_admin_service import UserAdminService
 from beanie import PydanticObjectId
 import cloudinary.uploader
 from app.utils.file_validation import validate_image_file
@@ -43,6 +43,21 @@ async def find_all_users(
         has_next=page < total_pages,
         has_prev=page > 1
     )
+
+@router.post('/{id}/restrict', response_model=UserOut)
+async def restrict_user(
+    id: str,
+    data: RestrictUserRequest = RestrictUserRequest(),
+    current_user: User = Depends(admin_required),
+):
+    return await UserAdminService.restrict_user(id, data, current_user)
+
+@router.post('/{id}/unrestrict', response_model=UserOut)
+async def unrestrict_user(
+    id: str,
+    current_user: User = Depends(admin_required),
+):
+    return await UserAdminService.unrestrict_user(id, current_user)
 
 @router.get('/{id}', response_model=UserOut)
 async def find_one_user(id: str, current_user: User = Depends(get_current_user)):

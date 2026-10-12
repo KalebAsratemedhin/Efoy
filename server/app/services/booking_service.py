@@ -12,6 +12,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import get_settings
 from app.core.websocket_manager import websocket_manager
 from app.services.notification_service import NotificationService
+from app.core.account_status import assert_doctor_bookable
 from zoneinfo import ZoneInfo
 
 settings = get_settings()
@@ -303,6 +304,8 @@ class BookingService:
 
     @staticmethod
     async def find_available_time_slots(doctorId: str, date_: date) -> List[str]:
+        await assert_doctor_bookable(doctorId)
+
         def generate_time_slots(start, end, interval):
             slots = []
             current = datetime.strptime(start, "%H:%M")
@@ -460,7 +463,7 @@ class BookingService:
 
     @staticmethod
     async def create_booking(booking_in: BookingCreate, current_user: User) -> dict:
-        # Use transaction for better data integrity
+        await assert_doctor_bookable(booking_in.doctorId)
         return await BookingService.create_booking_with_transaction(booking_in, current_user)
 
     @staticmethod

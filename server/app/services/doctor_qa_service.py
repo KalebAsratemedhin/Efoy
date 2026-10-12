@@ -14,6 +14,7 @@ from app.schemas.doctor_qa import (
     DoctorQuestionOut,
 )
 from app.services.reaction_service import get_my_reactions_map
+from app.core.account_status import assert_doctor_publicly_visible
 
 
 def _link_id(link) -> str:
@@ -61,10 +62,15 @@ async def _serialize_question(
     }
 
 
-async def _ensure_doctor_user(user_id: str) -> User:
-    user = await User.get(PydanticObjectId(user_id))
-    if not user or user.role != "doctor":
-        raise HTTPException(status_code=404, detail="Doctor not found")
+async def _ensure_doctor_user(
+    user_id: str,
+    *,
+    current_user: Optional[User] = None,
+) -> User:
+    allow_restricted = bool(current_user and current_user.role == "admin")
+    user = await assert_doctor_publicly_visible(
+        user_id, allow_restricted=allow_restricted
+    )
     profile = await Doctor.find_one(Doctor.userId.id == PydanticObjectId(user_id))
     if not profile:
         raise HTTPException(status_code=404, detail="Doctor profile not found")
@@ -80,7 +86,7 @@ class DoctorQAService:
         status: Optional[str] = None,
         current_user: Optional[User] = None,
     ) -> dict:
-        await _ensure_doctor_user(doctor_user_id)
+        await _ensure_doctor_user(doctor_user_id, current_user=current_user)
         is_owner = (
             current_user is not None
             and current_user.role == "doctor"
@@ -146,7 +152,7 @@ class DoctorQAService:
         if str(current_user.id) == data.doctorId:
             raise HTTPException(status_code=400, detail="You cannot ask yourself a question")
 
-        await _ensure_doctor_user(data.doctorId)
+        await _ensure_doctor_user(data.doctorId, current_user=current_user)
 
         question = DoctorQuestion(
             doctorId=PydanticObjectId(data.doctorId),

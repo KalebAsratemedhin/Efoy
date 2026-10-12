@@ -143,6 +143,12 @@ class AuthService:
         user = await User.find_one({"email": data.email})
         if not user or not user.password or not pwd_context.verify(data.password, user.password):
             raise HTTPException(status_code=400, detail="Invalid email or password.")
+
+        if getattr(user, "isRestricted", False):
+            raise HTTPException(
+                status_code=403,
+                detail="Your account has been restricted. Contact support for help.",
+            )
         
         # Check if email is verified (only for non-Google users)
         if (

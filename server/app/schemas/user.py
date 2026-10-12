@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, field_serializer
 from typing import Optional, Literal
 from datetime import datetime
-from beanie import PydanticObjectId
 
 class UserBase(BaseModel):
     fullName: str
@@ -27,6 +26,10 @@ class UserUpdate(BaseModel):
 
 class UserOut(UserBase):
     id: str
+    isVerified: bool = False
+    isRestricted: bool = False
+    restrictedAt: Optional[datetime] = None
+    restrictionReason: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -36,4 +39,8 @@ class UserOut(UserBase):
 
     model_config = {
         "from_attributes": True,
-    } 
+    }
+
+
+class RestrictUserRequest(BaseModel):
+    reason: Optional[str] = Field(None, max_length=500) 

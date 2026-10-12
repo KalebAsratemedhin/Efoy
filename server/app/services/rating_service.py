@@ -6,6 +6,7 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException
 from typing import List, Optional
 from beanie.operators import And
+from app.core.account_status import is_user_restricted
 
 class RatingService:
     @staticmethod
@@ -171,6 +172,8 @@ class RatingService:
         result = []
         for doc_id in doctor_ids:
             user = await User.get(PydanticObjectId(doc_id))
+            if not user or is_user_restricted(user):
+                continue
             doc = await Doctor.find_one(Doctor.userId.id == PydanticObjectId(doc_id))
             if user and doc:
                 # Return in the format expected by DoctorCard component

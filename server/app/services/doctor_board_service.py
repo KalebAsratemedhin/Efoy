@@ -7,6 +7,7 @@ from app.db.models.user import User
 from app.db.models.doctor import Doctor
 from app.schemas.doctor_board import DoctorPostCreate, DoctorPostUpdate, DoctorPostOut
 from app.services.reaction_service import get_my_reactions_map
+from app.core.account_status import assert_doctor_publicly_visible
 
 
 def _link_id(link) -> str:
@@ -33,10 +34,15 @@ def _serialize_post(post: DoctorPost, my_reaction: Optional[str] = None) -> dict
     }
 
 
-async def _ensure_doctor_user(user_id: str) -> User:
-    user = await User.get(PydanticObjectId(user_id))
-    if not user or user.role != "doctor":
-        raise HTTPException(status_code=404, detail="Doctor not found")
+async def _ensure_doctor_user(
+    user_id: str,
+    *,
+    current_user: Optional[User] = None,
+) -> User:
+    allow_restricted = bool(current_user and current_user.role == "admin")
+    user = await assert_doctor_publicly_visible(
+        user_id, allow_restricted=allow_restricted
+    )
     profile = await Doctor.find_one(Doctor.userId.id == PydanticObjectId(user_id))
     if not profile:
         raise HTTPException(status_code=404, detail="Doctor profile not found")
@@ -53,7 +59,7 @@ class DoctorBoardService:
         status: Optional[str] = None,
         current_user: Optional[User] = None,
     ) -> dict:
-        await _ensure_doctor_user(doctor_user_id)
+        await _ensure_doctor_user(doctor_user_id, current_user=current_user)
         is_owner = (
             current_user is not None
             and current_user.role == "doctor"
@@ -119,6 +125,7 @@ class DoctorBoardService:
             raise HTTPException(status_code=404, detail="Post not found")
 
         doctor_id = _link_id(post.doctorId)
+        await _ensure_doctor_user(doctor_id, current_user=current_user)
         is_owner = (
             current_user is not None
             and current_user.role == "doctor"
@@ -136,7 +143,7 @@ class DoctorBoardService:
     async def create_post(data: DoctorPostCreate, current_user: User) -> dict:
         if current_user.role != "doctor":
             raise HTTPException(status_code=403, detail="Only doctors can create board posts")
-        await _ensure_doctor_user(str(current_user.id))
+        await _ensure_doctor_user(str(current_user.id), current_user=current_user)
 
         post = DoctorPost(
             doctorId=current_user,

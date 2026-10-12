@@ -10,7 +10,11 @@ import { useErrorToast } from "../../hooks/useErrorToast";
 const DoctorDetails = () => {
   const { id } = useParams();
   const auth = useSelector(authSelector);
-  const { isLoading, isError, isSuccess, error, data } = useGetDoctorByIdQuery(id as string);
+  const isAdmin = auth.role === "admin";
+  const { isLoading, isError, isSuccess, error, data } = useGetDoctorByIdQuery(
+    { id: id as string, includeRestricted: isAdmin },
+    { skip: !id }
+  );
   const doctor = data;
   const isPublicShell = !auth.id;
 

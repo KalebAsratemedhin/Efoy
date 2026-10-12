@@ -36,24 +36,42 @@ export const doctorAPI = createApi({
           min_price: params?.min_price,
           max_price: params?.max_price,
           sort: params?.sort,
+          include_restricted: params?.include_restricted ? true : undefined,
         });
         return { url: qs || "/", method: "GET" };
       },
       providesTags: ["Doctor"],
     }),
-    getSpecialities: builder.query<string[], void>({
-      query: () => ({
-        url: "/specialities",
-        method: "GET",
-      }),
+    getSpecialities: builder.query<string[], { includeRestricted?: boolean } | void>({
+      query: (params) => {
+        const qs = toQueryString({
+          include_restricted: params?.includeRestricted ? true : undefined,
+        });
+        return {
+          url: `/specialities${qs}`,
+          method: "GET",
+        };
+      },
       providesTags: ["Specialities"],
     }),
-    getDoctorById: builder.query<Doctor, string>({
-      query: (id: string) => ({
-        url: `/${id}`,
-        method: "GET",
-      }),
-      providesTags: (_, __, id) => [{ type: "Doctor", id }],
+    getDoctorById: builder.query<
+      Doctor,
+      { id: string; includeRestricted?: boolean } | string
+    >({
+      query: (arg) => {
+        const id = typeof arg === "string" ? arg : arg.id;
+        const includeRestricted = typeof arg === "string" ? false : Boolean(arg.includeRestricted);
+        const qs = toQueryString({
+          include_restricted: includeRestricted ? true : undefined,
+        });
+        return {
+          url: `/${id}${qs}`,
+          method: "GET",
+        };
+      },
+      providesTags: (_, __, arg) => [
+        { type: "Doctor", id: typeof arg === "string" ? arg : arg.id },
+      ],
     }),
     getDoctorByUserId: builder.query<Doctor, string>({
       query: (userId: string) => ({

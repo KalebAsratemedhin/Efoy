@@ -11,6 +11,14 @@ export interface User{
     role: 'patient' | 'doctor' | 'admin';
     profilePic?: string;
     googleId?: string;
+    isVerified?: boolean;
+    isRestricted?: boolean;
+    restrictedAt?: string;
+    restrictionReason?: string;
+}
+
+export interface RestrictUserRequest {
+    reason?: string;
 }
 
 export interface DoctorData {
@@ -103,6 +111,8 @@ export interface DoctorListParams {
     min_price?: number;
     max_price?: number;
     sort?: DoctorSort;
+    /** Admin only — include restricted doctor accounts in results */
+    include_restricted?: boolean;
 }
 
 export type { DoctorCreate } from './Doctor';

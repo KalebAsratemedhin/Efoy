@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status
 from typing import Optional, Dict, List
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorOut, DoctorPaginatedResponse
 from app.services.doctor_service import DoctorService
-from app.core.security import get_current_user, admin_required
+from app.core.security import get_current_user, get_optional_current_user, admin_required
 from app.db.models.user import User
 from datetime import date
 from app.services.booking_service import BookingService
+from app.core.account_status import assert_doctor_bookable
 
 router = APIRouter()
 
@@ -22,7 +23,12 @@ async def find_all_doctors(
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
     sort: str = Query("rating_desc"),
+    include_restricted: bool = Query(False),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    allow_restricted = bool(
+        include_restricted and current_user and current_user.role == "admin"
+    )
     return await DoctorService.find_all_doctors(
         page=page,
         limit=limit,
@@ -34,13 +40,20 @@ async def find_all_doctors(
         min_price=min_price,
         max_price=max_price,
         sort=sort,
+        include_restricted=allow_restricted,
     )
 
 
 @router.get('/specialities', response_model=List[str])
-async def list_specialities():
+async def list_specialities(
+    include_restricted: bool = Query(False),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
     """Distinct specialities for filter dropdowns."""
-    return await DoctorService.list_specialities()
+    allow_restricted = bool(
+        include_restricted and current_user and current_user.role == "admin"
+    )
+    return await DoctorService.list_specialities(include_restricted=allow_restricted)
 
 
 @router.get('/available-slots', response_model=List[str])
@@ -49,12 +62,20 @@ async def available_slots(
     date: date = Query(...),
     current_user: User = Depends(get_current_user)
 ):
+    await assert_doctor_bookable(doctor)
     return await BookingService.find_available_time_slots(doctor, date)
 
 
 @router.get('/{id}', response_model=DoctorOut)
-async def find_one_doctor(id: str):
-    return await DoctorService.find_one_doctor(id)
+async def find_one_doctor(
+    id: str,
+    include_restricted: bool = Query(False),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    allow_restricted = bool(
+        include_restricted and current_user and current_user.role == "admin"
+    )
+    return await DoctorService.find_one_doctor(id, include_restricted=allow_restricted)
 
 
 @router.get('/user/{user_id}', response_model=DoctorOut)

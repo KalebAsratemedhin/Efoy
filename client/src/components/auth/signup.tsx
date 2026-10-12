@@ -8,6 +8,7 @@ import { FcGoogle } from "react-icons/fc";
 import FormError from "../utils/FormError";
 import { motion } from "framer-motion";
 import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import { PHONE_NUMBER_MAX_LENGTH, phoneNumberFieldOptions } from "../../lib/phone";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -197,10 +198,14 @@ const Signup = () => {
                 <input
                   id="phoneNumber"
                   type="tel"
-                  placeholder="+251 …"
+                  placeholder="0911…2345"
+                  maxLength={PHONE_NUMBER_MAX_LENGTH}
                   className={inputClass}
-                  {...register("phoneNumber")}
+                  {...register("phoneNumber", phoneNumberFieldOptions)}
                 />
+                {errors.phoneNumber && (
+                  <p className="mt-1.5 text-sm text-red-600">{errors.phoneNumber.message}</p>
+                )}
               </div>
             </div>
 

@@ -4,11 +4,13 @@ import DoctorCard from "./DoctorCard";
 import Pagination, { parsePaginationMeta } from "../utils/Pagination";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Doctor, DoctorListParams, DoctorSort } from "../../types/User";
 import { FaSearch, FaTimes } from "react-icons/fa";
 import { readNumberParam } from "../../lib/queryParams";
 import AdvancedFilters from "../utils/AdvancedFilters";
 import { useErrorToast } from "../../hooks/useErrorToast";
+import { authSelector } from "../../redux/slices/authSlice";
 
 const SORT_OPTIONS: { value: DoctorSort; label: string }[] = [
   { value: "rating_desc", label: "Highest rated" },
@@ -34,6 +36,8 @@ interface DoctorsListProps {
 }
 
 const DoctorsList = ({ embedded = false }: DoctorsListProps) => {
+  const auth = useSelector(authSelector);
+  const isAdmin = auth.role === "admin";
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchDraft, setSearchDraft] = useState(searchParams.get("search") ?? "");
 
@@ -51,8 +55,9 @@ const DoctorsList = ({ embedded = false }: DoctorsListProps) => {
       min_price: readNumberParam(searchParams, "min_price"),
       max_price: readNumberParam(searchParams, "max_price"),
       sort: validSort ?? "rating_desc",
+      include_restricted: isAdmin || undefined,
     };
-  }, [searchParams]);
+  }, [searchParams, isAdmin]);
 
   useEffect(() => {
     setSearchDraft(filters.search ?? "");
@@ -71,9 +76,10 @@ const DoctorsList = ({ embedded = false }: DoctorsListProps) => {
     [searchParams, setSearchParams]
   );
 
-  const { data: specialities = [] } = useGetSpecialitiesQuery(undefined, {
-    skip: embedded,
-  });
+  const { data: specialities = [] } = useGetSpecialitiesQuery(
+    isAdmin ? { includeRestricted: true } : undefined,
+    { skip: embedded }
+  );
 
   const { isLoading, isFetching, isSuccess, isError, error, data } = useGetDoctorsQuery(filters);
   useErrorToast(isError, error, "doctors-list");

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { FaChevronDown, FaUser, FaUserMd } from "react-icons/fa";
+import { PHONE_NUMBER_MAX_LENGTH, phoneNumberFieldOptions } from "../../lib/phone";
 
 interface FormData {
   fullName: string;
@@ -172,7 +173,13 @@ const Profile = () => {
                 <label htmlFor="phoneNumber" className={labelClass}>
                   Phone
                 </label>
-                <input id="phoneNumber" type="tel" {...register("phoneNumber")} className={inputClass} />
+                <input
+                  id="phoneNumber"
+                  type="tel"
+                  maxLength={PHONE_NUMBER_MAX_LENGTH}
+                  {...register("phoneNumber", phoneNumberFieldOptions)}
+                  className={inputClass}
+                />
                 {errors.phoneNumber && (
                   <p className="text-red-500 text-sm mt-1">{errors.phoneNumber.message}</p>
                 )}
