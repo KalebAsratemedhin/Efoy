@@ -42,5 +42,19 @@ export interface PrescriptionPaginatedResponse {
     has_prev: boolean;
 }
 
+export interface PatientPrescriptionListParams {
+    page?: number;
+    limit?: number;
+    /** Filter to prescriptions from this doctor user id */
+    doctor_id?: string;
+}
+
+export interface DoctorPrescriptionListParams {
+    page?: number;
+    limit?: number;
+    /** Filter to prescriptions for this patient user id */
+    patient_id?: string;
+}
+
 // Import User type from existing types
 import { User } from './User'; 

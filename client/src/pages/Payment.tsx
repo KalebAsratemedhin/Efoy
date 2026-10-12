@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { FaCreditCard, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import { FaCreditCard, FaExclamationTriangle } from 'react-icons/fa';
 import { useCreateCheckoutSessionMutation, useGetPaymentStatusQuery } from '../redux/api/paymentAPI';
 import { useGetCurrentUserQuery } from '../redux/api/userAPI';
 import { useFindOneBookingQuery } from '../redux/api/bookingAPI';
 import { AppointmentPayment } from '../types/Payment';
 import BackButton from '../components/utils/BackButton';
+import { PageLoader, InlineSpinner, Skeleton } from '../components/utils/Spinner';
 
 const Payment: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -95,12 +96,8 @@ const Payment: React.FC = () => {
   if (isStripeRedirect) {
     if (isStatusLoading) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <FaSpinner className="text-blue-600 text-4xl mx-auto mb-4 animate-spin" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Processing Payment</h2>
-            <p className="text-gray-600">Please wait while we verify your payment...</p>
-          </div>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+          <PageLoader label="Processing payment…" />
         </div>
       );
     }
@@ -122,12 +119,8 @@ const Payment: React.FC = () => {
   // Show loading while fetching booking data
   if (isBookingLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FaSpinner className="text-blue-600 text-4xl mx-auto mb-4 animate-spin" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Booking Details</h2>
-          <p className="text-gray-600">Please wait while we fetch your appointment information...</p>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <PageLoader label="Loading booking…" />
       </div>
     );
   }
@@ -149,11 +142,14 @@ const Payment: React.FC = () => {
   // Show loading while creating checkout session
   if (isCreatingSession) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FaSpinner className="text-blue-600 text-4xl mx-auto mb-4 animate-spin" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Preparing Payment</h2>
-          <p className="text-gray-600">Creating your secure payment session...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 text-center">
+          <Skeleton className="h-12 w-12 rounded-xl mx-auto" />
+          <h2 className="text-xl font-semibold text-ink">Preparing payment</h2>
+          <p className="text-slate-600 text-sm">Creating your secure payment session…</p>
+          <div className="flex justify-center text-accent">
+            <InlineSpinner />
+          </div>
         </div>
       </div>
     );
@@ -183,13 +179,13 @@ const Payment: React.FC = () => {
 
   // Show initial payment preparation message
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <FaCreditCard className="text-blue-600 text-4xl mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Preparing Payment</h2>
-        <p className="text-gray-600">Setting up your secure payment session...</p>
-        <div className="mt-4">
-          <FaSpinner className="text-blue-600 text-2xl mx-auto animate-spin" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 text-center">
+        <FaCreditCard className="text-accent text-3xl mx-auto" />
+        <h2 className="text-xl font-semibold text-ink">Preparing payment</h2>
+        <p className="text-slate-600 text-sm">Setting up your secure payment session…</p>
+        <div className="flex justify-center text-accent">
+          <InlineSpinner />
         </div>
       </div>
     </div>

@@ -199,10 +199,39 @@ class PaymentService:
                 await payment.save()
                 
                 # Update booking status if needed
-                booking = await Booking.get(payment.bookingId.id)
-                if booking and booking.status == 'pending':
-                    booking.status = 'confirmed'
+                booking = await Booking.get(payment.bookingId.id, fetch_links=True)
+                if booking:
+                    booking.paymentStatus = 'paid'
+                    booking.paymentId = str(payment.id)
+                    if booking.status == 'pending':
+                        booking.status = 'confirmed'
                     await booking.save()
+                    from app.services.notification_service import NotificationService
+                    payload = {
+                        "bookingId": str(booking.id),
+                        "paymentId": str(payment.id),
+                        "amount": payment.amount,
+                        "currency": payment.currency,
+                    }
+                    await NotificationService.notify(
+                        recipient_id=booking.patientId.id,
+                        type="payment_paid",
+                        title="Payment successful",
+                        message="Your appointment payment was received. The booking is confirmed.",
+                        actor_id=current_user.id,
+                        data=payload,
+                    )
+                    await NotificationService.notify(
+                        recipient_id=booking.doctorId.id,
+                        type="booking_confirmed",
+                        title="Appointment confirmed",
+                        message=(
+                            f"Payment received for appointment on "
+                            f"{booking.appointmentDate} at {booking.time}."
+                        ),
+                        actor_id=current_user.id,
+                        data=payload,
+                    )
 
                 return {
                     "success": True,
@@ -283,6 +312,21 @@ class PaymentService:
             payment.status = PaymentStatus.REFUNDED
             await payment.save()
 
+            from app.services.notification_service import NotificationService
+            await NotificationService.notify(
+                recipient_id=current_user.id,
+                type="payment_refunded",
+                title="Payment refunded",
+                message="Your refund request was processed successfully.",
+                data={
+                    "paymentId": str(payment.id),
+                    "refundId": refund.id,
+                    "bookingId": str(payment.bookingId.id)
+                    if hasattr(payment.bookingId, "id")
+                    else str(payment.bookingId),
+                },
+            )
+
             return {
                 "success": True,
                 "refundId": refund.id,
@@ -320,7 +364,7 @@ class PaymentService:
                         logging.info(f"Updated payment status to completed")
                         
                         # Update booking status and payment info
-                        booking = await Booking.get(payment.bookingId.id)
+                        booking = await Booking.get(payment.bookingId.id, fetch_links=True)
                         if booking:
                             logging.info(f"Updating booking {booking.id} payment status and confirming appointment")
                             booking.paymentStatus = 'paid'
@@ -329,6 +373,33 @@ class PaymentService:
                                 booking.status = 'confirmed'
                             await booking.save()
                             logging.info(f"Updated booking payment status to paid and status to confirmed")
+
+                            from app.services.notification_service import NotificationService
+                            patient_id = booking.patientId.id
+                            doctor_id = booking.doctorId.id
+                            payload = {
+                                "bookingId": str(booking.id),
+                                "paymentId": str(payment.id),
+                                "amount": payment.amount,
+                                "currency": payment.currency,
+                            }
+                            await NotificationService.notify(
+                                recipient_id=patient_id,
+                                type="payment_paid",
+                                title="Payment successful",
+                                message="Your appointment payment was received. The booking is confirmed.",
+                                data=payload,
+                            )
+                            await NotificationService.notify(
+                                recipient_id=doctor_id,
+                                type="booking_confirmed",
+                                title="Appointment confirmed",
+                                message=(
+                                    f"Payment received for appointment on "
+                                    f"{booking.appointmentDate} at {booking.time}."
+                                ),
+                                data=payload,
+                            )
                         else:
                             logging.error(f"Booking not found for payment: {payment.bookingId.id}")
                     else:
@@ -342,10 +413,27 @@ class PaymentService:
                 
                 if payment_intent_id:
                     # Update payment status
-                    payment = await Payment.find_one(Payment.stripePaymentIntentId == payment_intent_id)
+                    payment = await Payment.find_one(
+                        Payment.stripePaymentIntentId == payment_intent_id,
+                        fetch_links=True,
+                    )
                     if payment:
                         payment.status = PaymentStatus.REFUNDED
                         await payment.save()
+                        from app.services.notification_service import NotificationService
+                        patient_id = payment.patientId.id if hasattr(payment.patientId, "id") else payment.patientId
+                        await NotificationService.notify(
+                            recipient_id=patient_id,
+                            type="payment_refunded",
+                            title="Payment refunded",
+                            message="A refund for your appointment payment was processed.",
+                            data={
+                                "paymentId": str(payment.id),
+                                "bookingId": str(payment.bookingId.id)
+                                if hasattr(payment.bookingId, "id")
+                                else str(payment.bookingId),
+                            },
+                        )
                 
                 return True
             

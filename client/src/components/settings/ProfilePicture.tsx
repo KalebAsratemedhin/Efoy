@@ -72,7 +72,7 @@ const ProfilePicture = ({ user }: { user: User }) => {
   const avatarSrc = displayUrl || user?.profilePic || null;
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-start gap-2 shrink-0">
       <input
         type="file"
         accept="image/*"
@@ -81,7 +81,7 @@ const ProfilePicture = ({ user }: { user: User }) => {
         onChange={onFileChange}
       />
       <label htmlFor="profilePicture" className="relative block cursor-pointer group">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-200 bg-slate-50 flex items-center justify-center ring-2 ring-white shadow-sm">
+        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white bg-slate-50 flex items-center justify-center shadow-md ring-1 ring-slate-200/80">
           {avatarSrc ? (
             <img
               className="w-full h-full object-cover"
@@ -90,14 +90,14 @@ const ProfilePicture = ({ user }: { user: User }) => {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <span className="text-xl font-semibold text-slate-500">{initials}</span>
+            <span className="text-2xl font-semibold text-accent">{initials}</span>
           )}
         </div>
-        <span className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
           <FaCamera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
         </span>
       </label>
-      <p className="text-xs text-slate-500">Click to upload & crop</p>
+      <p className="text-xs text-slate-500 pl-1">Click photo to update</p>
       {(isLoading || isCropping) && (
         <span className="inline-flex items-center gap-2 text-sm text-slate-600">
           <InlineSpinner /> Saving…

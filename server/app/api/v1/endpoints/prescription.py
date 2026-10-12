@@ -3,8 +3,7 @@ from app.core.security import get_current_user
 from app.db.models.user import User
 from app.schemas.prescription import PrescriptionCreate, PrescriptionUpdate, PrescriptionOut, PrescriptionPaginatedResponse
 from app.services.prescription_service import PrescriptionService
-from beanie import PydanticObjectId
-from typing import Dict, Any, Union
+from typing import Optional
 
 router = APIRouter()
 
@@ -23,25 +22,31 @@ async def create_prescription(
 async def get_patient_prescriptions(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
+    doctor_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ) -> PrescriptionPaginatedResponse:
     """Get prescriptions for the current patient user"""
     if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Only patients can access their prescriptions")
     
-    return await PrescriptionService.find_patient_prescriptions(current_user, page, limit)
+    return await PrescriptionService.find_patient_prescriptions(
+        current_user, page=page, limit=limit, doctor_id=doctor_id
+    )
 
 @router.get("/doctor")
 async def get_doctor_prescriptions(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
+    patient_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ) -> PrescriptionPaginatedResponse:
     """Get prescriptions created by the current doctor user"""
     if current_user.role != "doctor":
         raise HTTPException(status_code=403, detail="Only doctors can access their prescriptions")
     
-    return await PrescriptionService.find_doctor_prescriptions(current_user, page, limit)
+    return await PrescriptionService.find_doctor_prescriptions(
+        current_user, page=page, limit=limit, patient_id=patient_id
+    )
 
 @router.get("/{id}")
 async def get_prescription(

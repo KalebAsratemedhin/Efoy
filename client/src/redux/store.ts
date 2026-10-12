@@ -10,6 +10,10 @@ import { dashboardAPI } from "./api/dashboardAPI";
 import { videoAPI } from "./api/videoAPI";
 import { prescriptionAPI } from "./api/prescriptionAPI";
 import { paymentAPI } from "./api/paymentAPI";
+import { notificationAPI } from "./api/notificationAPI";
+import { doctorBoardAPI } from "./api/doctorBoardAPI";
+import { doctorQaAPI } from "./api/doctorQaAPI";
+import { reactionAPI } from "./api/reactionAPI";
 
 export const store = configureStore({
     reducer: {
@@ -24,6 +28,10 @@ export const store = configureStore({
         [videoAPI.reducerPath]: videoAPI.reducer,
         [prescriptionAPI.reducerPath]: prescriptionAPI.reducer,
         [paymentAPI.reducerPath]: paymentAPI.reducer,
+        [notificationAPI.reducerPath]: notificationAPI.reducer,
+        [doctorBoardAPI.reducerPath]: doctorBoardAPI.reducer,
+        [doctorQaAPI.reducerPath]: doctorQaAPI.reducer,
+        [reactionAPI.reducerPath]: reactionAPI.reducer,
     },
     middleware: getDefaultMiddleware =>
         getDefaultMiddleware()
@@ -37,6 +45,10 @@ export const store = configureStore({
             .concat(videoAPI.middleware)
             .concat(prescriptionAPI.middleware)
             .concat(paymentAPI.middleware)
+            .concat(notificationAPI.middleware)
+            .concat(doctorBoardAPI.middleware)
+            .concat(doctorQaAPI.middleware)
+            .concat(reactionAPI.middleware)
 })
 
 export type RootState = ReturnType<typeof store.getState>

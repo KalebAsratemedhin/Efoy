@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Rating, PopulatedRating, FavoriteDoctor } from "../../types/Rating";
+import { Rating, FavoriteDoctor, RatingPaginatedResponse } from "../../types/Rating";
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 
@@ -63,13 +63,16 @@ export const ratingAPI = createApi({
             }),
             providesTags: ['Rating']
         }),
-        // Added missing endpoint
-        getDoctorRatings: builder.query<PopulatedRating[], string>({
-            query: (doctorId) => ({
+        getDoctorRatings: builder.query<
+            RatingPaginatedResponse,
+            { doctorId: string; page?: number; limit?: number }
+        >({
+            query: ({ doctorId, page = 1, limit = 100 }) => ({
                 url: `/doctor/${doctorId}/all`,
-                method: 'Get'
+                method: 'Get',
+                params: { page, limit },
             }),
-            providesTags: (_, __, doctorId) => [
+            providesTags: (_, __, { doctorId }) => [
                 { type: 'Rating', id: 'LIST' },
                 { type: 'Doctor', id: doctorId }
             ]

@@ -195,11 +195,20 @@ const BookingCalendar = ({ bookings, emptyHint }: BookingCalendarProps) => {
                   )}
                   <div>
                     <p className="text-xs text-slate-500">{isPatient ? "Doctor" : "Patient"}</p>
-                    <p className="text-ink font-medium">
-                      {isPatient
-                        ? `Dr. ${selected.doctorId?.fullName || "Unknown"}`
-                        : selected.patientId?.fullName || "Patient"}
-                    </p>
+                    {isPatient && selected.doctorId?.id ? (
+                      <Link
+                        to={`/doctors/${selected.doctorId.id}`}
+                        className="text-ink font-medium hover:text-accent transition-colors"
+                      >
+                        Dr. {selected.doctorId?.fullName || "Unknown"}
+                      </Link>
+                    ) : (
+                      <p className="text-ink font-medium">
+                        {isPatient
+                          ? `Dr. ${selected.doctorId?.fullName || "Unknown"}`
+                          : selected.patientId?.fullName || "Patient"}
+                      </p>
+                    )}
                     {isPatient && selected.doctorData?.speciality && (
                       <p className="text-slate-500 text-xs mt-0.5">
                         {selected.doctorData.speciality}

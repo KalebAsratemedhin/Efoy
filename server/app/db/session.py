@@ -9,10 +9,29 @@ from app.db.models.rating import Rating
 from app.core.config import get_settings
 from app.db.models.prescription import Prescription
 from app.db.models.payment import Payment
+from app.db.models.notification import Notification
+from app.db.models.doctor_post import DoctorPost
+from app.db.models.doctor_question import DoctorQuestion
+from app.db.models.content_reaction import ContentReaction
 
 settings = get_settings()
 
 async def initiate_database():
     client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGO_URI)
     database = client.get_default_database()
-    await init_beanie(database, document_models=[User, Booking, Doctor, Comment, Rating, Prescription, Payment]) 
+    await init_beanie(
+        database,
+        document_models=[
+            User,
+            Booking,
+            Doctor,
+            Comment,
+            Rating,
+            Prescription,
+            Payment,
+            Notification,
+            DoctorPost,
+            DoctorQuestion,
+            ContentReaction,
+        ],
+    ) 

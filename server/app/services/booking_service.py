@@ -11,6 +11,7 @@ import re
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import get_settings
 from app.core.websocket_manager import websocket_manager
+from app.services.notification_service import NotificationService
 from zoneinfo import ZoneInfo
 
 settings = get_settings()
@@ -37,6 +38,13 @@ def _link_id(link) -> PydanticObjectId:
     if hasattr(link, "ref"):
         return link.ref.id
     return link.id
+
+
+def _parse_object_id(value: str, field_name: str) -> PydanticObjectId:
+    try:
+        return PydanticObjectId(value)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}")
 
 
 class BookingService:
@@ -87,6 +95,9 @@ class BookingService:
         speciality: Optional[str] = None,
         min_rating: Optional[float] = None,
         sort: str = "date_desc",
+        doctor_id: Optional[str] = None,
+        patient_id: Optional[str] = None,
+        exclude_id: Optional[str] = None,
     ) -> dict:
         if current_user.role not in ("patient", "doctor"):
             raise HTTPException(status_code=403, detail="No such role")
@@ -120,11 +131,29 @@ class BookingService:
                 detail="speciality and min_rating filters are only available for patients",
             )
 
+        if doctor_id is not None and current_user.role != "patient":
+            raise HTTPException(
+                status_code=400,
+                detail="doctor_id filter is only available for patients",
+            )
+        if patient_id is not None and current_user.role != "doctor":
+            raise HTTPException(
+                status_code=400,
+                detail="patient_id filter is only available for doctors",
+            )
+
         conditions = []
         if current_user.role == "patient":
             conditions.append(Booking.patientId.id == current_user.id)
         else:
             conditions.append(Booking.doctorId.id == current_user.id)
+
+        if doctor_id is not None:
+            conditions.append(Booking.doctorId.id == _parse_object_id(doctor_id, "doctor_id"))
+        if patient_id is not None:
+            conditions.append(Booking.patientId.id == _parse_object_id(patient_id, "patient_id"))
+        if exclude_id is not None:
+            conditions.append(Booking.id != _parse_object_id(exclude_id, "exclude_id"))
 
         if status:
             conditions.append(Booking.status == status)
@@ -175,6 +204,12 @@ class BookingService:
         if doctor_user_ids is not None:
             if not doctor_user_ids:
                 return _empty_booking_page(page, limit)
+            # If doctor_id was also provided, intersect
+            if doctor_id is not None:
+                pair_doctor = _parse_object_id(doctor_id, "doctor_id")
+                doctor_user_ids = {oid for oid in doctor_user_ids if oid == pair_doctor}
+                if not doctor_user_ids:
+                    return _empty_booking_page(page, limit)
             conditions.append({"doctorId.id": {"$in": list(doctor_user_ids)}})
 
         find_filter = And(*conditions) if len(conditions) > 1 else conditions[0]
@@ -258,6 +293,7 @@ class BookingService:
                 'speciality': doctor.speciality,
                 'experience': doctor.experience,
                 'educationLevel': doctor.educationLevel,
+                'sessionPrice': doctor.sessionPrice,
                 'workingHours': doctor.workingHours,
                 'created_at': doctor.created_at,
                 'updated_at': doctor.updated_at
@@ -376,6 +412,23 @@ class BookingService:
                         )
                     except Exception as e:
                         print(f"Failed to broadcast slot update: {e}")
+
+                    await NotificationService.notify(
+                        recipient_id=booking.doctorId.id,
+                        type="booking_created",
+                        title="New appointment request",
+                        message=(
+                            f"{current_user.fullName} booked an appointment on "
+                            f"{booking.appointmentDate} at {booking.time}."
+                        ),
+                        actor_id=current_user.id,
+                        data={
+                            "bookingId": str(booking.id),
+                            "appointmentDate": str(booking.appointmentDate),
+                            "time": booking.time,
+                            "appointmentType": booking.appointmentType,
+                        },
+                    )
                     
                     # Convert to dict and add doctorData
                     booking_dict = booking.model_dump()
@@ -467,11 +520,52 @@ class BookingService:
             if existing:
                 raise HTTPException(status_code=402, detail="Time slot is unavailable.")
         
+        previous_status = booking.status
         for field, value in update_data.items():
             setattr(booking, field, value)
         
         await booking.save()
 
+        patient_id = booking.patientId.id
+        doctor_id = booking.doctorId.id
+        booking_data = {
+            "bookingId": str(booking.id),
+            "appointmentDate": str(booking.appointmentDate),
+            "time": booking.time,
+            "status": booking.status,
+        }
+
+        if update_data.get("status") == "cancelled" and previous_status != "cancelled":
+            for recipient in (patient_id, doctor_id):
+                await NotificationService.notify(
+                    recipient_id=recipient,
+                    type="booking_cancelled",
+                    title="Appointment cancelled",
+                    message=(
+                        f"Appointment on {booking.appointmentDate} at {booking.time} was cancelled."
+                    ),
+                    data=booking_data,
+                )
+        else:
+            # Notify the other party about schedule/details changes
+            await NotificationService.notify(
+                recipient_id=doctor_id,
+                type="booking_updated",
+                title="Appointment updated",
+                message=(
+                    f"An appointment was updated to {booking.appointmentDate} at {booking.time}."
+                ),
+                data=booking_data,
+            )
+            await NotificationService.notify(
+                recipient_id=patient_id,
+                type="booking_updated",
+                title="Appointment updated",
+                message=(
+                    f"Your appointment was updated to {booking.appointmentDate} at {booking.time}."
+                ),
+                data=booking_data,
+            )
 
          # Convert to dict and add doctorData
         booking_dict = booking.model_dump()
@@ -514,6 +608,18 @@ class BookingService:
         # Update status to finished
         booking.status = "finished"
         await booking.save()
+
+        await booking.fetch_link(Booking.patientId)
+        await NotificationService.notify(
+            recipient_id=booking.patientId.id,
+            type="booking_finished",
+            title="Appointment completed",
+            message=(
+                f"Your appointment on {booking.appointmentDate} at {booking.time} was marked finished."
+            ),
+            actor_id=current_user.id,
+            data={"bookingId": str(booking.id)},
+        )
         
         # Fetch patient data for response
         await booking.fetch_link(Booking.patientId)
@@ -547,11 +653,29 @@ class BookingService:
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
-        # Store doctor ID and date before deleting
+        # Store IDs before deleting
         doctor_id = str(booking.doctorId.id)
+        patient_id = str(booking.patientId.id)
         appointment_date = booking.appointmentDate
+        booking_id = str(booking.id)
+        booking_time = booking.time
         
         await booking.delete()
+
+        await NotificationService.notify(
+            recipient_id=doctor_id,
+            type="booking_cancelled",
+            title="Appointment removed",
+            message=f"An appointment on {appointment_date} at {booking_time} was removed.",
+            data={"bookingId": booking_id, "appointmentDate": str(appointment_date), "time": booking_time},
+        )
+        await NotificationService.notify(
+            recipient_id=patient_id,
+            type="booking_cancelled",
+            title="Appointment removed",
+            message=f"Your appointment on {appointment_date} at {booking_time} was removed.",
+            data={"bookingId": booking_id, "appointmentDate": str(appointment_date), "time": booking_time},
+        )
         
         # Broadcast slot update to all connected clients
         try:

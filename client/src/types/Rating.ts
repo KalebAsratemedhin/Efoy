@@ -28,3 +28,13 @@ export interface FavoriteDoctor {
         speciality: string;
     };
 }
+
+export interface RatingPaginatedResponse {
+    items: PopulatedRating[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+}

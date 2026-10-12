@@ -86,6 +86,9 @@ export const bookingAPI = createApi({
           speciality: params?.speciality,
           min_rating: params?.min_rating,
           sort: params?.sort,
+          doctor_id: params?.doctor_id,
+          patient_id: params?.patient_id,
+          exclude_id: params?.exclude_id,
         });
         return { url: qs || "/", method: "Get" };
       },

@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDeleteBookingMutation } from "../../redux/api/bookingAPI";
 import { useFindCurrentUserRatingQuery } from "../../redux/api/ratingAPI";
 import { InlineSpinner } from "../utils/Spinner";
 import { BookingPopulated } from "../../types/Booking";
-import { FaCalendarAlt, FaClock, FaTrash, FaEye, FaVideo, FaVideoSlash, FaCreditCard } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaTrash, FaVideo, FaVideoSlash, FaCreditCard } from "react-icons/fa";
 import RatingStars from "../rating/RatingStars";
 import { useEffect } from "react";
 import { formatTime } from "../../utils/timeUtils";
@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { extractErrorMessage } from "../../utils/errorHandler";
 
 const BookingCardPatient = ({ booking, refetch }: { booking: BookingPopulated; refetch: () => void }) => {
+  const navigate = useNavigate();
   const doctor = booking.doctorId;
+  const doctorProfileHref = doctor?.id ? `/doctors/${doctor.id}` : undefined;
   const avatarUrl =
     doctor?.profilePic ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor?.fullName ?? "")}&background=e2e8f0&color=475569&size=128`;
@@ -21,7 +23,8 @@ const BookingCardPatient = ({ booking, refetch }: { booking: BookingPopulated; r
     skip: booking.status !== "finished",
   });
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     await deleteBooking(booking.id as string);
   };
 
@@ -45,18 +48,50 @@ const BookingCardPatient = ({ booking, refetch }: { booking: BookingPopulated; r
   const statusStyle = statusStyles[booking.status ?? ""] ?? "bg-slate-100 text-slate-700";
 
   return (
-    <div className="h-full p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-slate-300 transition-colors">
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate(`/appointments/${booking.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate(`/appointments/${booking.id}`);
+        }
+      }}
+      className="h-full p-6 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
+    >
       <div className="flex gap-4">
-        <img
-          src={avatarUrl}
-          alt={doctor?.fullName ?? ""}
-          className="w-14 h-14 rounded-full object-contain bg-slate-50 shrink-0 ring-2 ring-slate-100 p-0.5"
-          referrerPolicy="no-referrer"
-        />
+        {doctorProfileHref ? (
+          <Link to={doctorProfileHref} className="shrink-0" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={avatarUrl}
+              alt={doctor?.fullName ?? ""}
+              className="w-14 h-14 rounded-full object-cover bg-slate-50 ring-2 ring-slate-100 hover:ring-accent/30 transition-shadow"
+              referrerPolicy="no-referrer"
+            />
+          </Link>
+        ) : (
+          <img
+            src={avatarUrl}
+            alt={doctor?.fullName ?? ""}
+            className="w-14 h-14 rounded-full object-cover bg-slate-50 shrink-0 ring-2 ring-slate-100"
+            referrerPolicy="no-referrer"
+          />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-ink text-base">Dr. {doctor?.fullName}</h3>
+              {doctorProfileHref ? (
+                <Link
+                  to={doctorProfileHref}
+                  onClick={(e) => e.stopPropagation()}
+                  className="font-semibold text-ink text-base hover:text-accent transition-colors"
+                >
+                  Dr. {doctor?.fullName}
+                </Link>
+              ) : (
+                <h3 className="font-semibold text-ink text-base">Dr. {doctor?.fullName}</h3>
+              )}
               <p className="text-slate-500 text-sm mt-0.5">
                 {booking.doctorData?.speciality} · {booking.doctorData?.experience} yrs
               </p>
@@ -96,6 +131,7 @@ const BookingCardPatient = ({ booking, refetch }: { booking: BookingPopulated; r
               <span className="text-sm text-amber-800">Payment — ${booking.paymentAmount ?? 150}</span>
               <Link
                 to={`/payment/${booking.id}`}
+                onClick={(e) => e.stopPropagation()}
                 className="text-sm font-medium text-amber-800 hover:text-amber-900 underline"
               >
                 Pay now
@@ -103,14 +139,10 @@ const BookingCardPatient = ({ booking, refetch }: { booking: BookingPopulated; r
             </div>
           )}
 
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2">
-            <Link
-              to={`/appointments/${booking.id}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover"
-            >
-              <FaEye className="w-3.5 h-3.5" />
-              Details
-            </Link>
+          <div
+            className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             {booking.paymentStatus === "unpaid" && (
               <Link
                 to={`/payment/${booking.id}`}
@@ -143,7 +175,10 @@ const BookingCardPatient = ({ booking, refetch }: { booking: BookingPopulated; r
           </div>
 
           {booking.status === "finished" && !existingRating && (
-            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+            <div
+              className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
               <span className="text-sm text-slate-600">Rate:</span>
               <RatingStars doctorId={doctor?.id ?? ""} />
             </div>

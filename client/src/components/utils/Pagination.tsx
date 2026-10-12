@@ -9,6 +9,7 @@ type PaginationProps = {
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
   pageSizeOptions?: readonly number[];
+  pageSizeId?: string;
   className?: string;
 };
 
@@ -53,6 +54,7 @@ const Pagination = ({
   pageSize,
   onPageSizeChange,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  pageSizeId = "page-size",
   className = "",
 }: PaginationProps) => {
   const totalPages = Math.max(1, rawTotalPages || 1);
@@ -82,12 +84,12 @@ const Pagination = ({
   return (
     <div className={`flex flex-col items-center gap-3 sm:flex-row sm:justify-between ${className}`}>
       <div className="flex items-center gap-2 order-2 sm:order-1">
-        <label htmlFor="page-size" className="text-sm text-slate-600 whitespace-nowrap">
+        <label htmlFor={pageSizeId} className="text-sm text-slate-600 whitespace-nowrap">
           Page size
         </label>
         <div className="relative">
           <select
-            id="page-size"
+            id={pageSizeId}
             value={pageSize ?? pageSizeOptions[0]}
             onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
             disabled={!onPageSizeChange}

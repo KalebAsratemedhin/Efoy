@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { authSelector } from "../../redux/slices/authSlice";
 import { CgMenuLeftAlt } from "react-icons/cg";
 import AuthHeaderInfo from "./AuthHeaderInfo";
+import NotificationBell from "../notifications/NotificationBell";
 import { useState, useRef, useEffect } from "react";
 
 const Header = ({
@@ -137,9 +138,12 @@ const Header = ({
             )}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
             {authState.id ? (
-              <AuthHeaderInfo />
+              <>
+                <NotificationBell />
+                <AuthHeaderInfo />
+              </>
             ) : (
               <div className="flex items-center gap-3">
                 <Link

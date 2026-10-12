@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useDeleteCommentMutation, useUpdateCommentMutation } from "../../redux/api/commentAPI";
 import { CommentI } from "../../types/Comment";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEllipsisV, FaPen, FaTrash } from "react-icons/fa";
 import { toast } from "sonner";
+import RatingDisplay from "../rating/RatingDisplay";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 const CommentCard = ({
   comment,
@@ -77,27 +84,46 @@ const CommentCard = ({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm font-semibold text-ink">{displayName}</p>
-              {dateLabel && <p className="text-xs text-slate-500">{dateLabel}</p>}
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                {comment.rating != null && comment.rating > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <RatingDisplay value={comment.rating} />
+                    <span className="text-xs font-medium text-slate-600 tabular-nums">
+                      {Number(comment.rating).toFixed(1)}
+                    </span>
+                  </div>
+                )}
+                {dateLabel && <p className="text-xs text-slate-500">{dateLabel}</p>}
+              </div>
             </div>
             {isEditable && !isEditing && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:bg-white hover:text-ink"
-                  aria-label="Edit review"
-                >
-                  <FaEdit className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="p-1.5 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600"
-                  aria-label="Delete review"
-                >
-                  <FaTrash className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="p-1.5 rounded-lg text-slate-500 hover:bg-white hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+                    aria-label="Review actions"
+                  >
+                    <FaEllipsisV className="w-3.5 h-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem
+                    onClick={() => setIsEditing(true)}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <FaPen className="w-3 h-3" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="gap-2 cursor-pointer text-red-600 focus:text-red-600"
+                  >
+                    <FaTrash className="w-3 h-3" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 

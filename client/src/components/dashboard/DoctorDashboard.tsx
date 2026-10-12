@@ -1,18 +1,38 @@
+import { useState } from "react";
 import Reminder from "./Reminder";
 import MonthlyReport from "./MonthlyReport";
+import DashboardHeader from "./DashboardHeader";
+import StatTile from "./StatTile";
+import SectionCard from "./SectionCard";
 import { useGetCurrentUserQuery } from "../../redux/api/userAPI";
 import { useGetDoctorDashboardQuery } from "../../redux/api/dashboardAPI";
 import { useGetDoctorPrescriptionsQuery } from "../../redux/api/prescriptionAPI";
-import { Link } from "react-router-dom";
-
 import { PageLoader } from "../utils/Spinner";
 import Error from "../utils/Error";
-import { FaPills } from "react-icons/fa";
+import {
+  FaPills,
+  FaCalendarCheck,
+  FaHourglassHalf,
+  FaCalendarDay,
+  FaChartLine,
+} from "react-icons/fa";
+import { Prescription } from "../../types/Prescription";
+import PrescriptionDisplay from "../appointments/PrescriptionDisplay";
 
 const DoctorDashboard = () => {
-  const { isLoading: isUserLoading, isError: isUserError, error: userError, data: user } = useGetCurrentUserQuery();
-  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError } = useGetDoctorDashboardQuery();
+  const {
+    isLoading: isUserLoading,
+    isError: isUserError,
+    error: userError,
+    data: user,
+  } = useGetCurrentUserQuery();
+  const {
+    data: dashboardData,
+    isLoading: isDashboardLoading,
+    error: dashboardError,
+  } = useGetDoctorDashboardQuery();
   const { data: prescriptionsData } = useGetDoctorPrescriptionsQuery({ page: 1, limit: 5 });
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
 
   if (isUserLoading || isDashboardLoading) return <PageLoader label="Loading dashboard…" />;
   if (isUserError) return <Error error={userError} />;
@@ -20,117 +40,114 @@ const DoctorDashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink">Welcome back, Dr. {user?.fullName}</h1>
+      <DashboardHeader
+        title={`Welcome back, Dr. ${user?.fullName ?? ""}`}
+        subtitle="Today’s schedule, patients, and prescriptions."
+      />
 
-      {/* Stat tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-6">
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500 font-medium">Total appointments</p>
-            <p className="mt-1 text-2xl font-semibold text-ink">
-              {dashboardData?.stats?.total_appointments || 0}
-            </p>
-          </div>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 text-sm font-semibold">
-            All
-          </span>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-amber-800 font-medium">Pending</p>
-            <p className="mt-1 text-2xl font-semibold text-ink">
-              {dashboardData?.stats?.pending_appointments || 0}
-            </p>
-          </div>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">
-            ·
-          </span>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-emerald-800 font-medium">Today</p>
-            <p className="mt-1 text-2xl font-semibold text-ink">
-              {dashboardData?.stats?.today_appointments || 0}
-            </p>
-          </div>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold">
-            {new Date().getDate()}
-          </span>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-sky-800 font-medium">Completion rate</p>
-            <p className="mt-1 text-2xl font-semibold text-ink">
-              {dashboardData?.stats?.completion_rate || 0}%
-            </p>
-          </div>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-sky-700 text-sm font-semibold">
-            ✓
-          </span>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatTile
+          label="Total appointments"
+          value={dashboardData?.stats?.total_appointments || 0}
+          icon={<FaCalendarCheck className="w-4 h-4" />}
+          tint="slate"
+        />
+        <StatTile
+          label="Pending"
+          value={dashboardData?.stats?.pending_appointments || 0}
+          icon={<FaHourglassHalf className="w-4 h-4" />}
+          tint="amber"
+        />
+        <StatTile
+          label="Today"
+          value={dashboardData?.stats?.today_appointments || 0}
+          icon={<FaCalendarDay className="w-4 h-4" />}
+          tint="emerald"
+        />
+        <StatTile
+          label="Completion rate"
+          value={`${dashboardData?.stats?.completion_rate || 0}%`}
+          icon={<FaChartLine className="w-4 h-4" />}
+          tint="sky"
+        />
       </div>
 
-      {/* Report + Upcoming appointment side by side, equal height via grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 mb-6 items-stretch">
-        <div className="min-h-0 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm py-6 px-6">
-          <div className="flex-1 min-h-0 flex flex-col">
-            <MonthlyReport 
-              dashboardData={dashboardData}
-              isLoading={isDashboardLoading}
-              error={dashboardError}
-            />
-          </div>
-        </div>
-        <div className="min-h-0">
-          <Reminder 
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 mb-6 items-stretch">
+        <div className="min-h-0 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm p-5 sm:p-6">
+          <MonthlyReport
             dashboardData={dashboardData}
             isLoading={isDashboardLoading}
             error={dashboardError}
-            userRole="doctor"
-            className="h-full"
           />
         </div>
+        <Reminder
+          dashboardData={dashboardData}
+          isLoading={isDashboardLoading}
+          error={dashboardError}
+          userRole="doctor"
+          className="h-full min-h-[20rem]"
+        />
       </div>
 
-      {/* Cards below - full width */}
-      <div className="space-y-6">
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-ink">Recent Prescriptions</h2>
-            <Link to="/prescriptions" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>
-          </div>
-          {prescriptionsData?.items && prescriptionsData.items.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {prescriptionsData.items.slice(0, 4).map((prescription) => (
-                <div key={prescription.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                      <FaPills className="text-slate-600 text-sm" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {prescription.patientId?.fullName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(prescription.issueDate || '').toLocaleDateString()}
-                      </p>
-                    </div>
+      <SectionCard title="Recent prescriptions" viewAllTo="/prescriptions">
+        {prescriptionsData?.items && prescriptionsData.items.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {prescriptionsData.items.slice(0, 4).map((prescription) => (
+              <button
+                key={prescription.id}
+                type="button"
+                onClick={() => setSelectedPrescription(prescription)}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 text-left hover:border-accent/40 hover:bg-slate-50/80 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
+                    <FaPills className="text-slate-600 text-sm" />
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    prescription.status === 'active' ? 'bg-green-100 text-green-800' :
-                    prescription.status === 'expired' ? 'bg-red-100 text-red-800' :
-                    'bg-slate-100 text-slate-800'
-                  }`}>
-                    {prescription.status || 'N/A'}
-                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink text-sm truncate">
+                      {prescription.patientId?.fullName}
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      {new Date(prescription.issueDate || "").toLocaleDateString()}
+                      {prescription.diagnosis ? ` · ${prescription.diagnosis}` : ""}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 text-slate-500 text-sm">No prescriptions created yet</div>
-          )}
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
+                    prescription.status === "active"
+                      ? "bg-green-100 text-green-800"
+                      : prescription.status === "expired"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-slate-100 text-slate-800"
+                  }`}
+                >
+                  {prescription.status || "N/A"}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center py-6 text-slate-500 text-sm">No prescriptions created yet</p>
+        )}
+      </SectionCard>
+
+      {selectedPrescription && (
+        <div
+          className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedPrescription(null)}
+        >
+          <div
+            className="max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PrescriptionDisplay
+              prescription={selectedPrescription}
+              onClose={() => setSelectedPrescription(null)}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -57,6 +57,9 @@ async def find_all_user_bookings(
     speciality: Optional[str] = None,
     min_rating: Optional[float] = Query(None, ge=0, le=5),
     sort: str = Query("date_desc"),
+    doctor_id: Optional[str] = None,
+    patient_id: Optional[str] = None,
+    exclude_id: Optional[str] = None,
 ):
     return await BookingService.find_all_user_bookings(
         current_user=current_user,
@@ -71,6 +74,9 @@ async def find_all_user_bookings(
         speciality=speciality,
         min_rating=min_rating,
         sort=sort,
+        doctor_id=doctor_id,
+        patient_id=patient_id,
+        exclude_id=exclude_id,
     )
 
 @router.get('/recent', response_model=BookingOut)

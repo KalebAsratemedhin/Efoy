@@ -81,4 +81,10 @@ export interface BookingListParams {
     speciality?: string;
     min_rating?: number;
     sort?: BookingSort;
+    /** Patient only — filter to this doctor user id */
+    doctor_id?: string;
+    /** Doctor only — filter to this patient user id */
+    patient_id?: string;
+    /** Exclude this booking document id (e.g. current details page) */
+    exclude_id?: string;
 }

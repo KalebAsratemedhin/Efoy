@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, status
-from typing import List, Optional
-from app.schemas.comment import CommentCreate, CommentUpdate, CommentOut
+from fastapi import APIRouter, Depends, Query, status
+from app.schemas.comment import CommentCreate, CommentUpdate, CommentOut, CommentPaginatedResponse
 from app.services.comment_service import CommentService
 from app.core.security import get_current_user
 from app.db.models.user import User
@@ -19,6 +18,10 @@ async def delete_comment(id: str, current_user: User = Depends(get_current_user)
 async def update_comment(id: str, data: CommentUpdate, current_user: User = Depends(get_current_user)):
     return await CommentService.update_comment(id, data, current_user)
 
-@router.get('/{doctorId}', response_model=List[CommentOut])
-async def get_comments(doctorId: str):
-    return await CommentService.get_comments(doctorId) 
+@router.get('/{doctorId}', response_model=CommentPaginatedResponse)
+async def get_comments(
+    doctorId: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+):
+    return await CommentService.get_comments(doctorId, page=page, limit=limit) 

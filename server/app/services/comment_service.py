@@ -1,3 +1,4 @@
+from typing import Optional
 from app.db.models.comment import Comment
 from app.db.models.user import User
 from app.schemas.comment import CommentCreate, CommentUpdate
@@ -14,12 +15,25 @@ def _link_id(link) -> str:
     return str(link)
 
 
-def _serialize_comment(comment: Comment) -> dict:
+async def _resolve_commenter(comment: Comment) -> Optional[User]:
+    link = comment.commenterId
+    if isinstance(link, User) or hasattr(link, "fullName"):
+        return link  # type: ignore[return-value]
+    try:
+        return await User.get(PydanticObjectId(_link_id(link)))
+    except Exception:
+        return None
+
+
+async def _serialize_comment(comment: Comment) -> dict:
+    commenter = await _resolve_commenter(comment)
     return {
         "id": str(comment.id),
         "commenterId": _link_id(comment.commenterId),
         "doctorId": _link_id(comment.doctorId),
         "content": comment.content,
+        "commenterName": getattr(commenter, "fullName", None) if commenter else None,
+        "commenterPic": getattr(commenter, "profilePic", None) if commenter else None,
         "created_at": comment.created_at,
         "updated_at": comment.updated_at,
     }
@@ -36,7 +50,22 @@ class CommentService:
             content=data.content
         )
         await comment.insert()
-        return _serialize_comment(comment)
+        from app.services.notification_service import NotificationService
+        preview = data.content.strip()
+        if len(preview) > 80:
+            preview = preview[:77] + "..."
+        await NotificationService.notify(
+            recipient_id=data.doctorId,
+            type="comment_created",
+            title="New review comment",
+            message=f"{current_user.fullName} left a comment: {preview}",
+            actor_id=current_user.id,
+            data={
+                "commentId": str(comment.id),
+                "doctorId": data.doctorId,
+            },
+        )
+        return await _serialize_comment(comment)
 
     @staticmethod
     async def delete_comment(id: str, current_user: User):
@@ -47,7 +76,7 @@ class CommentService:
         if _link_id(comment.commenterId) != str(current_user.id):
             raise HTTPException(status_code=403, detail="You can only delete your own comments")
 
-        payload = _serialize_comment(comment)
+        payload = await _serialize_comment(comment)
         await comment.delete()
         return payload
 
@@ -65,21 +94,38 @@ class CommentService:
             setattr(comment, field, value)
 
         await comment.save()
-        return _serialize_comment(comment)
+        return await _serialize_comment(comment)
 
     @staticmethod
-    async def get_comments(doctorId: str):
+    async def get_comments(doctorId: str, page: int = 1, limit: int = 10):
         if not doctorId:
             raise HTTPException(status_code=400, detail="No Id provided.")
-        comments = await Comment.find(
-            Comment.doctorId.id == PydanticObjectId(doctorId),
-            fetch_links=False
-        ).to_list()
-        return [_serialize_comment(c) for c in comments]
+        try:
+            doctor_oid = PydanticObjectId(doctorId)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid doctorId")
+
+        find_filter = Comment.doctorId.id == doctor_oid
+        skip = (page - 1) * limit
+        total = await Comment.find(find_filter).count()
+        comments = (
+            await Comment.find(find_filter, fetch_links=True)
+            .sort([("created_at", -1)])
+            .skip(skip)
+            .limit(limit)
+            .to_list()
+        )
+        total_pages = (total + limit - 1) // limit if total else 0
+        return {
+            "items": [await _serialize_comment(c) for c in comments],
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        }
 
     @staticmethod
-    async def get_doctor_comments(doctorId: str):
-        comments = await Comment.find(
-            Comment.doctorId.id == PydanticObjectId(doctorId)
-        ).to_list()
-        return [_serialize_comment(c) for c in comments]
+    async def get_doctor_comments(doctorId: str, page: int = 1, limit: int = 10):
+        return await CommentService.get_comments(doctorId, page=page, limit=limit)

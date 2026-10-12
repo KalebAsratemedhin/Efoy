@@ -7,6 +7,7 @@ import { authSelector } from "../../redux/slices/authSlice";
 import { useNavigate } from "react-router-dom";
 import { BookingPopulated } from "../../types/Booking";
 import { formatTime } from "../../utils/timeUtils";
+import { PageLoader } from "../utils/Spinner";
 
 const Appointments = () => {
   const navigate = useNavigate();
@@ -22,8 +23,8 @@ const Appointments = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600"></div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <PageLoader label="Loading appointments…" />
       </div>
     );
   }

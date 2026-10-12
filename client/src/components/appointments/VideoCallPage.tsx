@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import VideoCall from "./VideoCall";
 import { FaVideo, FaUserMd, FaCalendar, FaPhone } from "react-icons/fa";
-import { PageLoader } from "../utils/Spinner";
+import { PageLoader, InlineSpinner } from "../utils/Spinner";
 import FormError from "../utils/FormError";
 import BackButton from "../utils/BackButton";
 import { useJoinVideoCallMutation, useEndVideoCallMutation } from "../../redux/api/videoAPI";
@@ -136,7 +136,7 @@ const VideoCallPage: React.FC = () => {
           >
             {isJoining ? (
               <>
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <InlineSpinner className="text-white" />
                 Joining…
               </>
             ) : (

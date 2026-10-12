@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from app.schemas.common import PaginatedResponse
 
 class CommentCreate(BaseModel):
     doctorId: str
@@ -28,6 +29,12 @@ class CommentOut(BaseModel):
     commenterId: str
     doctorId: str
     content: str
+    commenterName: Optional[str] = None
+    commenterPic: Optional[str] = None
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
-    model_config = {"from_attributes": True} 
+    model_config = {"from_attributes": True}
+
+
+class CommentPaginatedResponse(PaginatedResponse[CommentOut]):
+    pass

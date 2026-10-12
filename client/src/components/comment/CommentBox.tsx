@@ -9,7 +9,13 @@ interface FormData {
   content: string;
 }
 
-const CommentBox = ({ doctorId }: { doctorId: string }) => {
+const CommentBox = ({
+  doctorId,
+  onSuccess,
+}: {
+  doctorId: string;
+  onSuccess?: () => void;
+}) => {
   const {
     formState: { errors },
     register,
@@ -17,7 +23,7 @@ const CommentBox = ({ doctorId }: { doctorId: string }) => {
     reset,
   } = useForm<FormData>();
   const [commentDoc, { isLoading, isSuccess, isError, error }] = useCreateCommentMutation();
-  const { refetch } = useFindAllCommentsQuery(doctorId);
+  const { refetch } = useFindAllCommentsQuery({ doctorId, page: 1, limit: 8 });
 
   const onSubmit = async (data: FormData) => {
     await commentDoc({ ...data, doctorId });
@@ -28,8 +34,9 @@ const CommentBox = ({ doctorId }: { doctorId: string }) => {
       reset();
       refetch();
       toast.success("Review posted.");
+      onSuccess?.();
     }
-  }, [isSuccess, refetch, reset]);
+  }, [isSuccess, refetch, reset, onSuccess]);
 
   useEffect(() => {
     if (isError) toast.error(extractErrorMessage(error));

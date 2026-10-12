@@ -12,6 +12,7 @@ import {
 } from '@stream-io/video-react-sdk';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { FaPhoneSlash } from 'react-icons/fa';
+import { InlineSpinner, Skeleton } from '../utils/Spinner';
 
 interface VideoCallProps {
   callId: string;
@@ -114,11 +115,14 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
   if (isConnecting || !client || !call) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-center text-slate-200">
-          <div className="w-12 h-12 border-2 border-slate-400 border-t-accent rounded-full animate-spin mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Connecting to call</h2>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center text-slate-200 space-y-4">
+          <Skeleton className="h-28 w-full rounded-2xl bg-slate-700/80 mx-auto" />
+          <h2 className="text-lg font-semibold">Connecting to call</h2>
           <p className="text-slate-400 text-sm">Establishing your video connection…</p>
+          <div className="flex justify-center text-slate-300">
+            <InlineSpinner />
+          </div>
         </div>
       </div>
     );
@@ -142,11 +146,14 @@ const CallUI: React.FC<{ onCallEnd: () => void }> = ({ onCallEnd }) => {
 
   if (callingState !== CallingState.JOINED) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-center text-slate-200">
-          <div className="w-12 h-12 border-2 border-slate-400 border-t-accent rounded-full animate-spin mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Joining call</h2>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center text-slate-200 space-y-4">
+          <Skeleton className="h-28 w-full rounded-2xl bg-slate-700/80 mx-auto" />
+          <h2 className="text-lg font-semibold">Joining call</h2>
           <p className="text-slate-400 text-sm">Please wait…</p>
+          <div className="flex justify-center text-slate-300">
+            <InlineSpinner />
+          </div>
         </div>
       </div>
     );

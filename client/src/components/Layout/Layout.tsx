@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar"
 import { useState } from "react"
 import { useSelector } from "react-redux"
 import { authSelector } from "../../redux/slices/authSlice"
+import NotificationProvider from "../notifications/NotificationProvider"
 
 const Layout = () => {
   const { pathname } = useLocation()
@@ -18,26 +19,28 @@ const Layout = () => {
   const isAppLayout = pathname !== "/" && authState.id;
 
   return (
-    <div className="h-screen flex">
-      {isAppLayout && isOpen && (
-        <div className="h-screen">
-          <Sidebar isOpen={isOpen} onSidebarToggle={handleSidebarToggle} />
-        </div>
-      )}
+    <NotificationProvider>
+      <div className="h-screen flex">
+        {isAppLayout && isOpen && (
+          <div className="h-screen">
+            <Sidebar isOpen={isOpen} onSidebarToggle={handleSidebarToggle} />
+          </div>
+        )}
 
-      <div className="flex flex-col flex-grow overflow-auto">
-        <Header
-          onSidebarToggle={handleSidebarToggle}
-          showBrandLogo={!isAppLayout || !isOpen}
-        />
-        <div
-          className={`flex-grow ${isAppLayout ? "bg-slate-100 px-4 py-5 sm:px-6 sm:py-6" : ""}`}
-        >
-          <Outlet />
+        <div className="flex flex-col flex-grow overflow-auto">
+          <Header
+            onSidebarToggle={handleSidebarToggle}
+            showBrandLogo={!isAppLayout || !isOpen}
+          />
+          <div
+            className={`flex-grow ${isAppLayout ? "bg-slate-100 px-4 py-5 sm:px-6 sm:py-6" : ""}`}
+          >
+            <Outlet />
+          </div>
+          {!isAppLayout && <Footer />}
         </div>
-        {!isAppLayout && <Footer />}
       </div>
-    </div>
+    </NotificationProvider>
   )
 }
 

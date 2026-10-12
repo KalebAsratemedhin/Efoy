@@ -70,6 +70,8 @@ const BookingPage = () => {
   if (!isSuccess || !doctor) return null;
 
   const name = doctor.userId?.fullName ?? "Doctor";
+  const doctorUserId = doctor.userId?.id;
+  const profileHref = doctorUserId ? `/doctors/${doctorUserId}` : undefined;
   const avatarUrl =
     doctor.userId?.profilePic ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e2e8f0&color=475569&size=200`;
@@ -81,14 +83,34 @@ const BookingPage = () => {
       {/* Doctor summary */}
       <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 mb-6 shadow-sm">
         <div className="flex items-center gap-5">
-          <img
-            src={avatarUrl}
-            alt={name}
-            className="w-20 h-20 rounded-full object-contain bg-slate-50 ring-2 ring-slate-100 p-0.5"
-            referrerPolicy="no-referrer"
-          />
+          {profileHref ? (
+            <Link to={profileHref} className="shrink-0">
+              <img
+                src={avatarUrl}
+                alt={name}
+                className="w-20 h-20 rounded-full object-cover bg-slate-50 ring-2 ring-slate-100 hover:ring-accent/30 transition-shadow"
+                referrerPolicy="no-referrer"
+              />
+            </Link>
+          ) : (
+            <img
+              src={avatarUrl}
+              alt={name}
+              className="w-20 h-20 rounded-full object-cover bg-slate-50 ring-2 ring-slate-100"
+              referrerPolicy="no-referrer"
+            />
+          )}
           <div>
-            <h2 className="text-xl font-semibold text-ink">Dr. {name}</h2>
+            {profileHref ? (
+              <Link
+                to={profileHref}
+                className="text-xl font-semibold text-ink hover:text-accent transition-colors"
+              >
+                Dr. {name}
+              </Link>
+            ) : (
+              <h2 className="text-xl font-semibold text-ink">Dr. {name}</h2>
+            )}
             <p className="text-accent text-base font-medium mt-0.5">{doctor.speciality}</p>
             <p className="text-slate-500 text-sm mt-1 flex items-center gap-1.5">
               <FaClock className="w-3.5 h-3.5 text-slate-400" />

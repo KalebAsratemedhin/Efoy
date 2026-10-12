@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from app.schemas.common import PaginatedResponse
 
 class RatingCreate(BaseModel):
     doctorId: str
@@ -30,4 +31,9 @@ class RatingOut(BaseModel):
     value: float
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
-    model_config = {"from_attributes": True} 
+    model_config = {"from_attributes": True}
+
+
+class RatingPaginatedResponse(PaginatedResponse[RatingOut]):
+    pass
+ 

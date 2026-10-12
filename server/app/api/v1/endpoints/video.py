@@ -95,6 +95,23 @@ async def join_video_call(
         if not booking.callStartedAt:
             booking.callStartedAt = datetime.now()
             await booking.save()
+            from app.services.notification_service import NotificationService
+            other_party = (
+                booking.doctorId.id
+                if str(current_user.id) == str(booking.patientId.id)
+                else booking.patientId.id
+            )
+            await NotificationService.notify(
+                recipient_id=other_party,
+                type="call_started",
+                title="Video call started",
+                message=f"{current_user.fullName} joined the video call.",
+                actor_id=current_user.id,
+                data={
+                    "bookingId": str(booking.id),
+                    "streamCallId": booking.streamCallId,
+                },
+            )
         
         return {
             "call_id": booking.streamCallId,
@@ -156,6 +173,23 @@ async def end_video_call(
             booking.callDuration = duration
             booking.status = "finished"
             await booking.save()
+            from app.services.notification_service import NotificationService
+            other_party = (
+                booking.doctorId.id
+                if str(current_user.id) == str(booking.patientId.id)
+                else booking.patientId.id
+            )
+            await NotificationService.notify(
+                recipient_id=other_party,
+                type="call_ended",
+                title="Video call ended",
+                message=f"The video call ended ({booking.callDuration or 0} min).",
+                actor_id=current_user.id,
+                data={
+                    "bookingId": str(booking.id),
+                    "callDuration": booking.callDuration,
+                },
+            )
         
         return {
             "message": "Call ended successfully",

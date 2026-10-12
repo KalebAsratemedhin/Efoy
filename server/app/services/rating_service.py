@@ -27,11 +27,21 @@ class RatingService:
             fetch_links=False
         )
 
+        from app.services.notification_service import NotificationService
+
         if existing_rating:
             # Update existing rating instead of creating duplicate
             existing_rating.value = data.value
             await existing_rating.save()
             await RatingService.update_total_rating(data.doctorId)
+            await NotificationService.notify(
+                recipient_id=data.doctorId,
+                type="rating_created",
+                title="Rating updated",
+                message=f"{current_user.fullName} updated their rating to {data.value}/5.",
+                actor_id=current_user.id,
+                data={"doctorId": data.doctorId, "value": data.value},
+            )
             return existing_rating.model_dump()
         
         # Create new rating
@@ -42,6 +52,14 @@ class RatingService:
         )
         await rating.insert()
         await RatingService.update_total_rating(data.doctorId)
+        await NotificationService.notify(
+            recipient_id=data.doctorId,
+            type="rating_created",
+            title="New rating",
+            message=f"{current_user.fullName} rated you {data.value}/5.",
+            actor_id=current_user.id,
+            data={"doctorId": data.doctorId, "value": data.value, "ratingId": str(rating.id)},
+        )
         return rating.model_dump()
 
     @staticmethod
@@ -97,13 +115,51 @@ class RatingService:
         return None
 
     @staticmethod
-    async def get_doctor_ratings(doctorId: str):
-        """Get all ratings for a specific doctor"""
-        ratings = await Rating.find(
-            Rating.doctorId.id == PydanticObjectId(doctorId),
-            fetch_links=False
-        ).to_list()
-        return [r.model_dump() for r in ratings]
+    def _serialize_rating(rating: Rating) -> dict:
+        def _id(link) -> str:
+            if hasattr(link, "ref"):
+                return str(link.ref.id)
+            if hasattr(link, "id"):
+                return str(link.id)
+            return str(link)
+
+        return {
+            "id": str(rating.id),
+            "raterId": _id(rating.raterId),
+            "doctorId": _id(rating.doctorId),
+            "value": rating.value,
+            "created_at": rating.created_at,
+            "updated_at": rating.updated_at,
+        }
+
+    @staticmethod
+    async def get_doctor_ratings(doctorId: str, page: int = 1, limit: int = 10):
+        """Get paginated ratings for a specific doctor"""
+        try:
+            doctor_oid = PydanticObjectId(doctorId)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid doctorId")
+
+        find_filter = Rating.doctorId.id == doctor_oid
+        skip = (page - 1) * limit
+        total = await Rating.find(find_filter).count()
+        ratings = (
+            await Rating.find(find_filter, fetch_links=False)
+            .sort([("created_at", -1)])
+            .skip(skip)
+            .limit(limit)
+            .to_list()
+        )
+        total_pages = (total + limit - 1) // limit if total else 0
+        return {
+            "items": [RatingService._serialize_rating(r) for r in ratings],
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        }
 
     @staticmethod
     async def get_favorites(current_user: User):

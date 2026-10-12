@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FaPills, FaDownload, FaEye, FaCalendar, FaUserMd, FaUser } from 'react-icons/fa';
 import { useGetPatientPrescriptionsQuery, useGetDoctorPrescriptionsQuery } from '../../redux/api/prescriptionAPI';
 import { Prescription } from '../../types/Prescription';
@@ -97,11 +98,21 @@ const PrescriptionList: React.FC = () => {
               </span>
             </div>
             <div className="p-5 space-y-4">
-              <div className="flex items-center gap-2 text-sm">                {isDoctor ? <FaUser className="text-slate-400" /> : <FaUserMd className="text-slate-400" />}
+              <div className="flex items-center gap-2 text-sm">
+                {isDoctor ? <FaUser className="text-slate-400" /> : <FaUserMd className="text-slate-400" />}
                 <span className="text-slate-500">{isDoctor ? 'Patient' : 'Doctor'}</span>
-                <span className="text-ink font-medium">
-                  {isDoctor ? prescription.patientId?.fullName : `Dr. ${prescription.doctorId?.fullName}`}
-                </span>
+                {isDoctor ? (
+                  <span className="text-ink font-medium">{prescription.patientId?.fullName}</span>
+                ) : prescription.doctorId?.id ? (
+                  <Link
+                    to={`/doctors/${prescription.doctorId.id}`}
+                    className="text-ink font-medium hover:text-accent transition-colors"
+                  >
+                    Dr. {prescription.doctorId?.fullName}
+                  </Link>
+                ) : (
+                  <span className="text-ink font-medium">Dr. {prescription.doctorId?.fullName}</span>
+                )}
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <FaCalendar className="text-slate-400" />

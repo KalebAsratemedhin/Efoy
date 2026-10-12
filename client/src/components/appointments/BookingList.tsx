@@ -9,7 +9,7 @@ import BookingCardDoctor from "./BookingCardDoctor";
 import Pagination, { parsePaginationMeta } from "../utils/Pagination";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FaSearch, FaTimes, FaListUl, FaCalendarAlt } from "react-icons/fa";
+import { FaSearch, FaTimes, FaListUl, FaCalendarAlt, FaStream } from "react-icons/fa";
 import {
   AppointmentType,
   BookingListParams,
@@ -21,8 +21,17 @@ import {
 import { readNumberParam } from "../../lib/queryParams";
 import AdvancedFilters from "../utils/AdvancedFilters";
 import BookingCalendar from "./BookingCalendar";
+import BookingQueue, { buildQueueBookings } from "./BookingQueue";
 
-type AppointmentsView = "list" | "calendar";
+type AppointmentsView = "list" | "calendar" | "queue";
+
+const todayIsoDate = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
 const STATUS_OPTIONS: { value: "" | BookingStatus; label: string }[] = [
   { value: "", label: "All" },
@@ -65,11 +74,17 @@ const inputClass =
 const BookingList = () => {
   const authState = useSelector(authSelector);
   const isPatient = authState.role === "patient";
+  const isDoctor = authState.role === "doctor";
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchDraft, setSearchDraft] = useState(searchParams.get("search") ?? "");
 
+  const viewParam = searchParams.get("view");
   const view: AppointmentsView =
-    searchParams.get("view") === "calendar" ? "calendar" : "list";
+    viewParam === "calendar"
+      ? "calendar"
+      : viewParam === "queue" && isDoctor
+        ? "queue"
+        : "list";
 
   const filters: BookingListParams = useMemo(() => {
     const status = searchParams.get("status") as BookingStatus | null;
@@ -77,6 +92,7 @@ const BookingList = () => {
     const payment_status = searchParams.get("payment_status") as PaymentStatus | null;
     const sort = searchParams.get("sort") as BookingSort | null;
     const isCalendar = searchParams.get("view") === "calendar";
+    const isQueue = searchParams.get("view") === "queue" && isDoctor;
 
     const validStatus = STATUS_OPTIONS.some((o) => o.value === status) ? status! : undefined;
     const validType = TYPE_OPTIONS.some((o) => o.value === appointment_type)
@@ -94,13 +110,13 @@ const BookingList = () => {
       status: validStatus || undefined,
       appointment_type: validType || undefined,
       payment_status: validPayment || undefined,
-      date_from: searchParams.get("date_from") || undefined,
-      date_to: searchParams.get("date_to") || undefined,
+      date_from: isQueue ? todayIsoDate() : searchParams.get("date_from") || undefined,
+      date_to: isQueue ? undefined : searchParams.get("date_to") || undefined,
       speciality: isPatient ? searchParams.get("speciality") || undefined : undefined,
       min_rating: isPatient ? readNumberParam(searchParams, "min_rating") : undefined,
-      sort: validSort,
+      sort: isQueue ? "date_asc" : validSort,
     };
-  }, [searchParams, isPatient]);
+  }, [searchParams, isPatient, isDoctor]);
 
   useEffect(() => {
     setSearchDraft(filters.search ?? "");
@@ -125,16 +141,20 @@ const BookingList = () => {
 
   const meta = parsePaginationMeta(data, filters.page ?? 1, filters.limit ?? 6);
   const bookings: BookingPopulated[] = Array.isArray(data?.items) ? data.items : [];
+  const queueBookings = useMemo(
+    () => (view === "queue" ? buildQueueBookings(bookings) : []),
+    [view, bookings]
+  );
   const totalPages = Math.max(1, meta.totalPages || 1);
 
   const advancedActive = [
     filters.appointment_type,
     filters.payment_status,
-    filters.date_from,
+    view !== "queue" && filters.date_from,
     filters.date_to,
     filters.speciality,
     filters.min_rating != null,
-    filters.sort && filters.sort !== "date_desc",
+    view !== "queue" && filters.sort && filters.sort !== "date_desc",
   ].filter(Boolean).length;
 
   const hasActiveFilters = Boolean(filters.search || filters.status || advancedActive > 0);
@@ -145,6 +165,7 @@ const BookingList = () => {
     next.set("page", "1");
     next.set("limit", view === "calendar" ? "100" : String(filters.limit ?? 6));
     if (view === "calendar") next.set("view", "calendar");
+    if (view === "queue") next.set("view", "queue");
     setSearchParams(next, { replace: true });
   };
 
@@ -153,6 +174,13 @@ const BookingList = () => {
     if (nextView === "calendar") {
       next.set("view", "calendar");
       next.delete("page");
+    } else if (nextView === "queue") {
+      next.set("view", "queue");
+      next.set("page", "1");
+      if (!next.get("limit")) next.set("limit", "6");
+      next.delete("date_from");
+      next.delete("date_to");
+      next.delete("sort");
     } else {
       next.delete("view");
       if (!next.get("page")) next.set("page", "1");
@@ -169,7 +197,11 @@ const BookingList = () => {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink">Appointments</h1>
-          <p className="text-slate-600 text-sm mt-1">View and manage your appointments.</p>
+          <p className="text-slate-600 text-sm mt-1">
+            {view === "queue"
+              ? "Upcoming appointments from now onward, soonest first."
+              : "View and manage your appointments."}
+          </p>
         </div>
 
         <div
@@ -191,6 +223,22 @@ const BookingList = () => {
             <FaListUl className="w-3.5 h-3.5" />
             List
           </button>
+          {isDoctor && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "queue"}
+              onClick={() => setView("queue")}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                view === "queue"
+                  ? "bg-white text-ink shadow-sm"
+                  : "text-slate-600 hover:text-ink"
+              }`}
+            >
+              <FaStream className="w-3.5 h-3.5" />
+              Queue
+            </button>
+          )}
           <button
             type="button"
             role="tab"
@@ -389,7 +437,7 @@ const BookingList = () => {
           </AdvancedFilters>
         )}
 
-        {view === "calendar" && hasActiveFilters && (
+        {(view === "calendar" || view === "queue") && hasActiveFilters && (
           <button
             type="button"
             onClick={clearFilters}
@@ -414,6 +462,17 @@ const BookingList = () => {
               : "You don't have any appointments yet."
           }
         />
+      ) : view === "queue" ? (
+        <BookingQueue
+          bookings={queueBookings}
+          refetch={refetch}
+          startIndex={((filters.page ?? 1) - 1) * (filters.limit ?? 6)}
+          emptyHint={
+            hasActiveFilters
+              ? "No upcoming appointments match your filters."
+              : "No upcoming appointments in the queue."
+          }
+        />
       ) : isSuccess && bookings.length === 0 ? (
         <div className="border border-slate-200 rounded-xl bg-white py-12 px-6 text-center shadow-sm">
           <p className="text-slate-600 text-sm">
@@ -434,7 +493,7 @@ const BookingList = () => {
         </div>
       )}
 
-      {view === "list" && (
+      {(view === "list" || view === "queue") && (
         <Pagination
           className="mt-8"
           currentPage={meta.currentPage}

@@ -24,11 +24,11 @@ const AuthHeaderInfo = () => {
   const handleSignout = async () => {
     try {
       await signout().unwrap();
-      dispatch(clearAuth());
-      navigate("/");
-    } catch (error) {
-      console.error("Failed to sign out:", error);
+    } catch {
+      /* still clear local session */
     }
+    dispatch(clearAuth());
+    navigate("/");
   };
 
   return (

@@ -3,9 +3,10 @@ from app.db.models.booking import Booking
 from app.db.models.user import User
 from app.schemas.prescription import PrescriptionCreate, PrescriptionUpdate, PrescriptionOut, PrescriptionPaginatedResponse
 from beanie import PydanticObjectId
+from beanie.operators import And
 from datetime import datetime
 from fastapi import HTTPException, status
-from typing import List, Union
+from typing import List, Optional, Union
 
 class PrescriptionService:
     @staticmethod
@@ -38,6 +39,19 @@ class PrescriptionService:
             )
             
             await prescription.insert()
+
+            from app.services.notification_service import NotificationService
+            await NotificationService.notify(
+                recipient_id=booking.patientId.id,
+                type="prescription_created",
+                title="New prescription",
+                message=f"Dr. {current_user.fullName} issued a prescription for your appointment.",
+                actor_id=current_user.id,
+                data={
+                    "prescriptionId": str(prescription.id),
+                    "bookingId": str(booking.id),
+                },
+            )
             
             # Convert to response format
             prescription_dict = prescription.model_dump()
@@ -67,18 +81,32 @@ class PrescriptionService:
             )
     
     @staticmethod
-    async def find_patient_prescriptions(current_user: User, page: int = 1, limit: int = 10) -> PrescriptionPaginatedResponse:
+    def _parse_object_id(value: str, field_name: str) -> PydanticObjectId:
+        try:
+            return PydanticObjectId(value)
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"Invalid {field_name}")
+
+    @staticmethod
+    async def find_patient_prescriptions(
+        current_user: User,
+        page: int = 1,
+        limit: int = 10,
+        doctor_id: Optional[str] = None,
+    ) -> PrescriptionPaginatedResponse:
         """Get prescriptions for the current patient user"""
         try:
             skip = (page - 1) * limit
-            
-            prescriptions = await Prescription.find(
-                Prescription.patientId.id == current_user.id
-            ).skip(skip).limit(limit).to_list()
-            
-            total_prescriptions = await Prescription.find(
-                Prescription.patientId.id == current_user.id
-            ).count()
+            conditions = [Prescription.patientId.id == current_user.id]
+            if doctor_id is not None:
+                conditions.append(
+                    Prescription.doctorId.id
+                    == PrescriptionService._parse_object_id(doctor_id, "doctor_id")
+                )
+            find_filter = And(*conditions) if len(conditions) > 1 else conditions[0]
+
+            prescriptions = await Prescription.find(find_filter).skip(skip).limit(limit).to_list()
+            total_prescriptions = await Prescription.find(find_filter).count()
             
             # Fetch linked data
             prescriptions_with_links = []
@@ -104,17 +132,20 @@ class PrescriptionService:
                     'role': current_user.role
                 }
                 prescriptions_with_links.append(PrescriptionOut.model_validate(prescription_dict))
-            
+
+            total_pages = (total_prescriptions + limit - 1) // limit if total_prescriptions else 0
             return PrescriptionPaginatedResponse(
                 items=prescriptions_with_links,
                 total=total_prescriptions,
                 page=page,
                 limit=limit,
-                total_pages=(total_prescriptions + limit - 1) // limit,
-                has_next=page < (total_prescriptions + limit - 1) // limit,
+                total_pages=total_pages,
+                has_next=page < total_pages,
                 has_prev=page > 1
             )
             
+        except HTTPException:
+            raise
         except Exception as e:
             print('getting patient prescriptions', e)
             raise HTTPException(
@@ -123,18 +154,25 @@ class PrescriptionService:
             )
     
     @staticmethod
-    async def find_doctor_prescriptions(current_user: User, page: int = 1, limit: int = 10) -> PrescriptionPaginatedResponse:
+    async def find_doctor_prescriptions(
+        current_user: User,
+        page: int = 1,
+        limit: int = 10,
+        patient_id: Optional[str] = None,
+    ) -> PrescriptionPaginatedResponse:
         """Get prescriptions created by the current doctor user"""
         try:
             skip = (page - 1) * limit
-            
-            prescriptions = await Prescription.find(
-                Prescription.doctorId.id == current_user.id
-            ).skip(skip).limit(limit).to_list()
-            
-            total_prescriptions = await Prescription.find(
-                Prescription.doctorId.id == current_user.id
-            ).count()
+            conditions = [Prescription.doctorId.id == current_user.id]
+            if patient_id is not None:
+                conditions.append(
+                    Prescription.patientId.id
+                    == PrescriptionService._parse_object_id(patient_id, "patient_id")
+                )
+            find_filter = And(*conditions) if len(conditions) > 1 else conditions[0]
+
+            prescriptions = await Prescription.find(find_filter).skip(skip).limit(limit).to_list()
+            total_prescriptions = await Prescription.find(find_filter).count()
             
             # Fetch linked data
             prescriptions_with_links = []
@@ -159,17 +197,20 @@ class PrescriptionService:
                     'role': prescription.patientId.role
                 }
                 prescriptions_with_links.append(PrescriptionOut.model_validate(prescription_dict))
-            
+
+            total_pages = (total_prescriptions + limit - 1) // limit if total_prescriptions else 0
             return PrescriptionPaginatedResponse(
                 items=prescriptions_with_links,
                 total=total_prescriptions,
                 page=page,
                 limit=limit,
-                total_pages=(total_prescriptions + limit - 1) // limit,
-                has_next=page < (total_prescriptions + limit - 1) // limit,
+                total_pages=total_pages,
+                has_next=page < total_pages,
                 has_prev=page > 1
             )
-            
+
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(
                 status_code=500,
