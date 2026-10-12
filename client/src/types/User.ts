@@ -90,4 +90,19 @@ export interface PaginatedResponse<T> {
     has_prev: boolean;
 }
 
+export type DoctorSort = "rating_desc" | "price_asc" | "price_desc" | "experience_desc";
+
+export interface DoctorListParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    speciality?: string;
+    min_rating?: number;
+    min_experience?: number;
+    max_experience?: number;
+    min_price?: number;
+    max_price?: number;
+    sort?: DoctorSort;
+}
+
 export type { DoctorCreate } from './Doctor';

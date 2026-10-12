@@ -5,6 +5,7 @@ import { useCreateCheckoutSessionMutation, useGetPaymentStatusQuery } from '../r
 import { useGetCurrentUserQuery } from '../redux/api/userAPI';
 import { useFindOneBookingQuery } from '../redux/api/bookingAPI';
 import { AppointmentPayment } from '../types/Payment';
+import BackButton from '../components/utils/BackButton';
 
 const Payment: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -111,12 +112,7 @@ const Payment: React.FC = () => {
             <FaExclamationTriangle className="text-red-600 text-4xl mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Not Completed</h2>
             <p className="text-gray-600 mb-4">Your payment was not completed successfully.</p>
-            <button
-              onClick={() => navigate('/appointments')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Back to Appointments
-            </button>
+            <BackButton to="/appointments" label="Back to Appointments" className="mx-auto" />
           </div>
         </div>
       );
@@ -144,12 +140,7 @@ const Payment: React.FC = () => {
           <FaExclamationTriangle className="text-red-600 text-4xl mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Booking Not Found</h2>
           <p className="text-gray-600 mb-4">Unable to load your appointment details.</p>
-          <button
-            onClick={() => navigate('/appointments')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Appointments
-          </button>
+          <BackButton to="/appointments" label="Back to Appointments" className="mx-auto" />
         </div>
       </div>
     );
@@ -176,18 +167,15 @@ const Payment: React.FC = () => {
           <FaExclamationTriangle className="text-red-600 text-4xl mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Error</h2>
           <p className="text-gray-600 mb-4">Failed to create payment session. Please try again.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-2"
-          >
-            Retry
-          </button>
-          <button
-            onClick={() => navigate('/appointments')}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            Back to Appointments
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-accent text-white rounded-xl text-sm font-medium hover:bg-accent-hover transition-colors"
+            >
+              Retry
+            </button>
+            <BackButton to="/appointments" label="Back to Appointments" />
+          </div>
         </div>
       </div>
     );

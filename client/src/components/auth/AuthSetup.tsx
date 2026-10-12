@@ -1,7 +1,7 @@
 import { Outlet} from "react-router-dom"
 
 import { useGetCurrentUserQuery } from "../../redux/api/userAPI"
-import Spinner from "../utils/Spinner"
+import { PageLoader } from "../utils/Spinner"
 import Error from "../utils/Error"
 import { CustomSerializedError } from "../../types/CustomSerializedError"
 
@@ -12,7 +12,7 @@ const AuthSetup = () => {
 
 
   if(isUserLoading)
-    return <Spinner />
+    return <PageLoader label="Loading…" />
     
   if(isUserError){
     const error = userError as CustomSerializedError

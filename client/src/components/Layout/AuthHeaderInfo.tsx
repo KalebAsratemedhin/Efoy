@@ -46,7 +46,8 @@ const AuthHeaderInfo = () => {
             <img
               src={currentUser.profilePic}
               alt={currentUser.fullName || "User"}
-              className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-200"
+              className="w-8 h-8 rounded-full object-contain bg-slate-50 ring-1 ring-slate-200"
+              referrerPolicy="no-referrer"
             />
           ) : (
             <FaUserCircle className="w-7 h-7 text-slate-500" />

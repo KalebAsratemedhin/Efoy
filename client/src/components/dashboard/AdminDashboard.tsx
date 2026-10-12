@@ -1,5 +1,5 @@
 import { useAdminStatsQuery, useGetCurrentUserQuery } from "../../redux/api/userAPI";
-import Spinner from "../utils/Spinner";
+import { PageLoader } from "../utils/Spinner";
 import Error from "../utils/Error";
 import { Link } from "react-router-dom";
 import { FaUserMd, FaPlusCircle, FaUsers, FaChartPie, FaUserCog } from "react-icons/fa";
@@ -10,14 +10,15 @@ const AdminDashboard = () => {
   const { data: user } = useGetCurrentUserQuery();
   const { isLoading, isError, isSuccess, error, data } = useAdminStatsQuery();
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <PageLoader label="Loading dashboard…" />;
   if (isError) return <Error error={error} />;
 
   if (!isSuccess) return null;
 
   return (
     <div className="max-w-7xl mx-auto">
-      <p className="text-slate-600 text-sm">
+      <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
+      <p className="text-slate-600 text-sm mt-1">
         Welcome back, {user?.fullName}. Manage doctors, view stats, and oversee the platform.
       </p>
 
@@ -53,7 +54,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <h3 className="font-semibold text-ink">Manage Doctors</h3>
-              <p className="text-slate-500 text-sm mt-0.5">Applications and profiles</p>
+              <p className="text-slate-500 text-sm mt-0.5">Doctor profiles and directory</p>
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ interface MonthlyReportProps {
 const MonthlyReport = ({ dashboardData, isLoading, error }: MonthlyReportProps) => {
   const authState = useSelector(authSelector)
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <Spinner size="sm" className="py-8" />;
   if (error) return <Error error={error} />;
 
   // For both doctors and patients, use the monthly chart data from dashboard

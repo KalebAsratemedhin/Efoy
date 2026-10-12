@@ -3,6 +3,8 @@ import { User } from "./User";
 export interface CommentI{
     id?: string;  // Changed from _id to id
     commenterId?: string;  // Changed to string to match backend
+    commenterName?: string;
+    commenterPic?: string;
     content: string;
     doctorId: string;
     created_at?: string;  // Added missing fields

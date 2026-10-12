@@ -1,13 +1,18 @@
 import { useForm } from "react-hook-form";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useGetDoctorByIdQuery } from "../../redux/api/doctorAPI";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
-import Spinner from "../utils/Spinner";
+import { PageLoader } from "../utils/Spinner";
 import Error from "../utils/Error";
+import BackButton from "../utils/BackButton";
 import { useCreateBookingMutation } from "../../redux/api/bookingAPI";
 import TimeDate from "./TimeDate";
-import { FaClock, FaInfoCircle, FaArrowLeft, FaVideo, FaCreditCard } from "react-icons/fa";
+import { FaClock, FaInfoCircle, FaVideo, FaCreditCard } from "react-icons/fa";
+import { authSelector } from "../../redux/slices/authSlice";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface FormData {
   appointmentDate: string;
@@ -23,8 +28,19 @@ const labelClass = "block text-sm font-medium text-slate-700 mb-1.5";
 const BookingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: doctor, isLoading, isError, isSuccess, error } = useGetDoctorByIdQuery(id as string);
+  const auth = useSelector(authSelector);
+  const canBook = auth.role !== "doctor" && auth.role !== "admin";
+  const { data: doctor, isLoading, isError, isSuccess, error } = useGetDoctorByIdQuery(id as string, {
+    skip: !canBook,
+  });
   const [createBooking, { isLoading: isCreateLoading, isError: isCreateError, isSuccess: isCreateSuccess, error: createError, data: createdBooking }] = useCreateBookingMutation();
+
+  useEffect(() => {
+    if (!canBook) {
+      toast.error("Doctor accounts can’t book appointments.");
+      navigate("/doctors", { replace: true });
+    }
+  }, [canBook, navigate]);
 
   const {
     register,
@@ -47,7 +63,8 @@ const BookingPage = () => {
     await createBooking(bookingData).unwrap();
   };
 
-  if (isLoading || isCreateLoading) return <Spinner />;
+  if (!canBook) return <PageLoader label="Redirecting…" />;
+  if (isLoading || isCreateLoading) return <PageLoader label="Loading…" />;
   if (isError || isCreateError) return <Error error={error || createError} />;
 
   if (!isSuccess || !doctor) return null;
@@ -58,28 +75,22 @@ const BookingPage = () => {
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e2e8f0&color=475569&size=200`;
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-slate-600 hover:text-ink text-sm font-medium mb-6 transition-colors"
-      >
-        <FaArrowLeft className="w-3.5 h-3.5" />
-        Back
-      </button>
+    <div className="max-w-5xl mx-auto">
+      <BackButton onClick={() => navigate(-1)} className="mb-6" />
 
       {/* Doctor summary */}
-      <div className="bg-white border border-slate-100 rounded-xl p-5 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 mb-6 shadow-sm">
+        <div className="flex items-center gap-5">
           <img
             src={avatarUrl}
             alt={name}
-            className="w-16 h-16 rounded-full object-cover ring-2 ring-slate-100"
+            className="w-20 h-20 rounded-full object-contain bg-slate-50 ring-2 ring-slate-100 p-0.5"
+            referrerPolicy="no-referrer"
           />
           <div>
-            <h2 className="text-lg font-semibold text-ink">Dr. {name}</h2>
-            <p className="text-accent text-sm font-medium">{doctor.speciality}</p>
-            <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-1.5">
+            <h2 className="text-xl font-semibold text-ink">Dr. {name}</h2>
+            <p className="text-accent text-base font-medium mt-0.5">{doctor.speciality}</p>
+            <p className="text-slate-500 text-sm mt-1 flex items-center gap-1.5">
               <FaClock className="w-3.5 h-3.5 text-slate-400" />
               {doctor.experience} years experience
             </p>
@@ -89,7 +100,7 @@ const BookingPage = () => {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-white border border-slate-100 rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm">
           <label htmlFor="reason" className={`${labelClass} flex items-center gap-2`}>
             <FaInfoCircle className="text-slate-500 w-4 h-4" />
             Reason for appointment
@@ -106,12 +117,12 @@ const BookingPage = () => {
           )}
         </div>
 
-        <div className="bg-white border border-slate-100 rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm">
           <label className={`${labelClass} flex items-center gap-2`}>
             <FaVideo className="text-slate-500 w-4 h-4" />
             Appointment type
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block">
               <input
                 type="radio"
@@ -119,13 +130,13 @@ const BookingPage = () => {
                 {...register("appointmentType", { required: "Select appointment type" })}
                 className="sr-only"
               />
-              <div className={`rounded-lg border-2 p-4 cursor-pointer transition-colors ${
+              <div className={`rounded-xl border-2 p-5 cursor-pointer transition-colors ${
                 watch("appointmentType") === "in_person"
                   ? "border-accent bg-accent/5"
                   : "border-slate-200 hover:border-slate-300"
               }`}>
-                <span className="font-medium text-ink">In-person</span>
-                <p className="text-slate-500 text-sm mt-0.5">Meet at the hospital</p>
+                <span className="font-medium text-ink text-base">In-person</span>
+                <p className="text-slate-500 text-sm mt-1">Meet at the hospital</p>
               </div>
             </label>
             <label className="block">
@@ -135,13 +146,13 @@ const BookingPage = () => {
                 {...register("appointmentType", { required: "Select appointment type" })}
                 className="sr-only"
               />
-              <div className={`rounded-lg border-2 p-4 cursor-pointer transition-colors ${
+              <div className={`rounded-xl border-2 p-5 cursor-pointer transition-colors ${
                 watch("appointmentType") === "virtual"
                   ? "border-accent bg-accent/5"
                   : "border-slate-200 hover:border-slate-300"
               }`}>
-                <span className="font-medium text-ink">Video call</span>
-                <p className="text-slate-500 text-sm mt-0.5">Online consultation</p>
+                <span className="font-medium text-ink text-base">Video call</span>
+                <p className="text-slate-500 text-sm mt-1">Online consultation</p>
               </div>
             </label>
           </div>

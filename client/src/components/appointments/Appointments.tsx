@@ -40,12 +40,13 @@ const Appointments = () => {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case "approved":
+      case "confirmed":
+      case "finished":
         return "text-green-600 bg-green-50";
-      case "rejected":
-        return "text-red-600 bg-red-50";
+      case "cancelled":
+        return "text-slate-600 bg-slate-50";
       case "pending":
-        return "text-yellow-600 bg-yellow-50";
+        return "text-amber-600 bg-amber-50";
       default:
         return "text-gray-600 bg-gray-50";
     }
@@ -53,12 +54,13 @@ const Appointments = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case "approved":
+      case "confirmed":
+      case "finished":
         return <FaCheckCircle className="text-green-500" />;
-      case "rejected":
-        return <FaTimes className="text-red-500" />;
+      case "cancelled":
+        return <FaTimes className="text-slate-500" />;
       case "pending":
-        return <FaClock className="text-yellow-500 animate-spin" />;
+        return <FaClock className="text-amber-500" />;
       default:
         return null;
     }
@@ -94,7 +96,8 @@ const Appointments = () => {
                     <img
                       src={booking.doctorId.profilePic || `https://ui-avatars.com/api/?name=${booking.doctorId.fullName}&background=0D8ABC&color=fff`}
                       alt={booking.doctorId.fullName}
-                      className="w-16 h-16 rounded-full object-cover"
+                      className="w-16 h-16 rounded-full object-contain bg-slate-50 p-0.5"
+                      referrerPolicy="no-referrer"
                     />
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">{booking.doctorId.fullName}</h3>

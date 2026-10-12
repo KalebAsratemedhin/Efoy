@@ -1,9 +1,9 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { FaCheckCircle, FaDownload, FaEnvelope, FaArrowLeft } from "react-icons/fa";
+import { useSearchParams } from "react-router-dom";
+import { FaCheckCircle, FaDownload, FaEnvelope } from "react-icons/fa";
+import BackButton from "../components/utils/BackButton";
 
 const PaymentSuccess: React.FC = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
@@ -45,8 +45,8 @@ Your appointment has been confirmed.`;
   };
 
   return (
-    <div className="max-w-xl mx-auto text-left py-8 px-4">
-      <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+    <div className="max-w-3xl mx-auto text-left">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="p-8 sm:p-10">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
@@ -97,14 +97,7 @@ Your appointment has been confirmed.`;
           </div>
 
           <div className="mt-6 pt-6 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => navigate("/appointments")}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent/50"
-            >
-              <FaArrowLeft className="w-3.5 h-3.5" />
-              Back to Appointments
-            </button>
+            <BackButton to="/appointments" label="Back to Appointments" />
           </div>
         </div>
       </div>

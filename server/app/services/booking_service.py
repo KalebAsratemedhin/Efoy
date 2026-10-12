@@ -5,7 +5,7 @@ from app.schemas.booking import BookingCreate, BookingUpdate, BookingOut
 from beanie import PydanticObjectId
 from datetime import date, datetime, timedelta
 from fastapi import HTTPException, status
-from typing import List
+from typing import List, Optional, Set
 from beanie.operators import And
 import re
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,6 +14,30 @@ from app.core.websocket_manager import websocket_manager
 from zoneinfo import ZoneInfo
 
 settings = get_settings()
+
+BOOKING_STATUSES = {"pending", "confirmed", "finished", "cancelled"}
+BOOKING_PAYMENT_STATUSES = {"paid", "unpaid", "refunded"}
+BOOKING_APPOINTMENT_TYPES = {"in_person", "virtual"}
+BOOKING_SORT_OPTIONS = {"date_desc", "date_asc"}
+
+
+def _empty_booking_page(page: int, limit: int) -> dict:
+    return {
+        "items": [],
+        "total": 0,
+        "page": page,
+        "limit": limit,
+        "total_pages": 0,
+        "has_next": False,
+        "has_prev": False,
+    }
+
+
+def _link_id(link) -> PydanticObjectId:
+    if hasattr(link, "ref"):
+        return link.ref.id
+    return link.id
+
 
 class BookingService:
     @staticmethod
@@ -35,49 +59,156 @@ class BookingService:
         return start_time <= time <= end_time
 
     @staticmethod
-    async def find_all_user_bookings(current_user: User, page: int = 1, limit: int = 10) -> dict:
-        skip = (page - 1) * limit
-        
-        if current_user.role == "patient":
-            bookings = await Booking.find(Booking.patientId.id == current_user.id).skip(skip).limit(limit).to_list()
-            total_bookings = await Booking.find(Booking.patientId.id == current_user.id).count()
-        elif current_user.role == "doctor":
-            bookings = await Booking.find(Booking.doctorId.id == current_user.id).skip(skip).limit(limit).to_list()
-            total_bookings = await Booking.find(Booking.doctorId.id == current_user.id).count()
-        else:
+    def _doctor_data_dict(doctor: Doctor) -> dict:
+        return {
+            "id": str(doctor.id),
+            "rating": doctor.rating,
+            "orgID": doctor.orgID,
+            "speciality": doctor.speciality,
+            "experience": doctor.experience,
+            "educationLevel": doctor.educationLevel,
+            "sessionPrice": doctor.sessionPrice,
+            "workingHours": doctor.workingHours,
+            "created_at": doctor.created_at,
+            "updated_at": doctor.updated_at,
+        }
+
+    @staticmethod
+    async def find_all_user_bookings(
+        current_user: User,
+        page: int = 1,
+        limit: int = 10,
+        search: Optional[str] = None,
+        status: Optional[str] = None,
+        appointment_type: Optional[str] = None,
+        payment_status: Optional[str] = None,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+        speciality: Optional[str] = None,
+        min_rating: Optional[float] = None,
+        sort: str = "date_desc",
+    ) -> dict:
+        if current_user.role not in ("patient", "doctor"):
             raise HTTPException(status_code=403, detail="No such role")
 
-        user_bookings = [await Booking.get(b.id, fetch_links=True) for b in bookings]
-        user_bookings_out = []
-        for b in user_bookings:
-            # Get doctor data for this booking
-            doctor = await Doctor.find_one(Doctor.userId.id == b.doctorId.id, fetch_links=False)
-            booking_dict = b.model_dump()
-            if doctor:
-                # Extract doctor data without the nested userId structure
-                doctor_data = {
-                    'id': str(doctor.id),
-                    'rating': doctor.rating,
-                    'orgID': doctor.orgID,
-                    'speciality': doctor.speciality,
-                    'experience': doctor.experience,
-                    'educationLevel': doctor.educationLevel,
-                    'workingHours': doctor.workingHours,
-                    'created_at': doctor.created_at,
-                    'updated_at': doctor.updated_at
+        if sort not in BOOKING_SORT_OPTIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid sort. Allowed: {', '.join(sorted(BOOKING_SORT_OPTIONS))}",
+            )
+        if status and status not in BOOKING_STATUSES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status. Allowed: {', '.join(sorted(BOOKING_STATUSES))}",
+            )
+        if payment_status and payment_status not in BOOKING_PAYMENT_STATUSES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid payment_status. Allowed: {', '.join(sorted(BOOKING_PAYMENT_STATUSES))}",
+            )
+        if appointment_type and appointment_type not in BOOKING_APPOINTMENT_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid appointment_type. Allowed: {', '.join(sorted(BOOKING_APPOINTMENT_TYPES))}",
+            )
+        if date_from and date_to and date_from > date_to:
+            raise HTTPException(status_code=400, detail="date_from cannot be after date_to")
+
+        if (speciality or min_rating is not None) and current_user.role != "patient":
+            raise HTTPException(
+                status_code=400,
+                detail="speciality and min_rating filters are only available for patients",
+            )
+
+        conditions = []
+        if current_user.role == "patient":
+            conditions.append(Booking.patientId.id == current_user.id)
+        else:
+            conditions.append(Booking.doctorId.id == current_user.id)
+
+        if status:
+            conditions.append(Booking.status == status)
+        if appointment_type:
+            conditions.append(Booking.appointmentType == appointment_type)
+        if payment_status:
+            conditions.append(Booking.paymentStatus == payment_status)
+        if date_from:
+            conditions.append(Booking.appointmentDate >= date_from)
+        if date_to:
+            conditions.append(Booking.appointmentDate <= date_to)
+
+        doctor_user_ids: Optional[Set[PydanticObjectId]] = None
+
+        if speciality or min_rating is not None:
+            doctor_filter: dict = {}
+            if speciality:
+                doctor_filter["speciality"] = {
+                    "$regex": f"^{re.escape(speciality.strip())}$",
+                    "$options": "i",
                 }
-                booking_dict['doctorData'] = doctor_data
+            if min_rating is not None:
+                doctor_filter["rating"] = {"$gte": min_rating}
+            matching_doctors = await Doctor.find(doctor_filter).to_list()
+            doctor_user_ids = {_link_id(d.userId) for d in matching_doctors}
+
+        if search and search.strip():
+            term = search.strip()
+            if current_user.role == "patient":
+                name_users = await User.find({
+                    "role": "doctor",
+                    "fullName": {"$regex": re.escape(term), "$options": "i"},
+                }).to_list()
+                search_ids = {u.id for u in name_users}
+                doctor_user_ids = (
+                    search_ids if doctor_user_ids is None else doctor_user_ids & search_ids
+                )
+            else:
+                name_users = await User.find({
+                    "role": "patient",
+                    "fullName": {"$regex": re.escape(term), "$options": "i"},
+                }).to_list()
+                patient_ids = [u.id for u in name_users]
+                if not patient_ids:
+                    return _empty_booking_page(page, limit)
+                conditions.append({"patientId.id": {"$in": patient_ids}})
+
+        if doctor_user_ids is not None:
+            if not doctor_user_ids:
+                return _empty_booking_page(page, limit)
+            conditions.append({"doctorId.id": {"$in": list(doctor_user_ids)}})
+
+        find_filter = And(*conditions) if len(conditions) > 1 else conditions[0]
+        sort_criteria = (
+            [("appointmentDate", 1), ("time", 1)]
+            if sort == "date_asc"
+            else [("appointmentDate", -1), ("time", -1)]
+        )
+        skip = (page - 1) * limit
+
+        total_bookings = await Booking.find(find_filter).count()
+        bookings = await Booking.find(find_filter).sort(sort_criteria).skip(skip).limit(limit).to_list()
+
+        user_bookings_out = []
+        for b in bookings:
+            booking_full = await Booking.get(b.id, fetch_links=True)
+            doctor = await Doctor.find_one(
+                Doctor.userId.id == booking_full.doctorId.id,
+                fetch_links=False,
+            )
+            booking_dict = booking_full.model_dump()
+            if doctor:
+                booking_dict["doctorData"] = BookingService._doctor_data_dict(doctor)
             user_bookings_out.append(BookingOut.model_validate(booking_dict))
 
-        print('user_bookings_out', user_bookings_out)
+        total_pages = (total_bookings + limit - 1) // limit if total_bookings else 0
         return {
-            'items': user_bookings_out,
-            'total': total_bookings,
-            'page': page,
-            'limit': limit,
-            'total_pages': (total_bookings + limit - 1) // limit,
-            'has_next': page < (total_bookings + limit - 1) // limit,
-            'has_prev': page > 1
+            "items": user_bookings_out,
+            "total": total_bookings,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
         }
 
     @staticmethod

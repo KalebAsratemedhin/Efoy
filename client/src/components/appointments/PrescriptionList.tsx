@@ -3,13 +3,14 @@ import { FaPills, FaDownload, FaEye, FaCalendar, FaUserMd, FaUser } from 'react-
 import { useGetPatientPrescriptionsQuery, useGetDoctorPrescriptionsQuery } from '../../redux/api/prescriptionAPI';
 import { Prescription } from '../../types/Prescription';
 import PrescriptionDisplay from './PrescriptionDisplay';
-import Spinner from '../utils/Spinner';
-import Pagination from '../utils/Pagination';
+import { PageLoader } from '../utils/Spinner';
+import Pagination, { parsePaginationMeta } from '../utils/Pagination';
 import { useSelector } from 'react-redux';
 import { authSelector } from '../../redux/slices/authSlice';
 
 const PrescriptionList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   
@@ -18,12 +19,12 @@ const PrescriptionList: React.FC = () => {
 
   const { data: patientPrescriptionsData, isLoading: isPatientLoading, isError: isPatientError } = useGetPatientPrescriptionsQuery({
     page: currentPage,
-    limit: 10
+    limit: pageSize
   }, { skip: isDoctor });
 
   const { data: doctorPrescriptionsData, isLoading: isDoctorLoading, isError: isDoctorError } = useGetDoctorPrescriptionsQuery({
     page: currentPage,
-    limit: 10
+    limit: pageSize
   }, { skip: !isDoctor });
 
   const prescriptionsData = isDoctor ? doctorPrescriptionsData : patientPrescriptionsData;
@@ -49,7 +50,7 @@ const PrescriptionList: React.FC = () => {
     setSelectedPrescription(null);
   };
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <PageLoader label="Loading prescriptions…" />;
 
   if (isError) {
     return (
@@ -62,9 +63,9 @@ const PrescriptionList: React.FC = () => {
   if (!prescriptionsData?.items || prescriptionsData.items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto">
-        <p className="text-slate-700 text-2xl font-bold mb-2">Prescriptions</p>
-        <p className="text-slate-600 text-sm mb-4">{isDoctor ? 'Manage prescriptions you create for patients.' : 'View your medical prescriptions.'}</p>
-        <div className="bg-white border border-slate-200 rounded-lg p-8 text-center text-slate-600">
+        <h1 className="text-2xl font-bold text-ink mb-1">Prescriptions</h1>
+        <p className="text-slate-600 text-sm mb-6">{isDoctor ? 'Manage prescriptions you create for patients.' : 'View your medical prescriptions.'}</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-600 shadow-sm">
           {isDoctor ? "You haven't created any prescriptions yet." : "You don't have any prescriptions yet."}
         </div>
       </div>
@@ -73,21 +74,21 @@ const PrescriptionList: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <p className="text-slate-700 text-2xl font-bold mb-2">Prescriptions</p>
-      <p className="text-slate-600 text-sm mb-4">{isDoctor ? 'Manage prescriptions for your patients.' : 'View your medical prescriptions.'}</p>
+      <h1 className="text-2xl font-bold text-ink mb-1">Prescriptions</h1>
+      <p className="text-slate-600 text-sm mb-6">{isDoctor ? 'Manage prescriptions for your patients.' : 'View your medical prescriptions.'}</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
         {prescriptionsData.items.map((prescription) => (
           <div
             key={prescription.id}
-            className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm"
+            className="h-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
           >
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FaPills className="text-accent" />
-                <span className="font-medium text-ink">#{prescription.id?.slice(-8)}</span>
+                <span className="font-medium text-ink text-base">#{prescription.id?.slice(-8)}</span>
               </div>
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                 prescription.status === 'active' ? 'bg-green-100 text-green-800' :
                 prescription.status === 'expired' ? 'bg-red-100 text-red-800' :
                 'bg-slate-100 text-slate-700'
@@ -95,9 +96,8 @@ const PrescriptionList: React.FC = () => {
                 {prescription.status || 'N/A'}
               </span>
             </div>
-            <div className="p-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                {isDoctor ? <FaUser className="text-slate-400" /> : <FaUserMd className="text-slate-400" />}
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-2 text-sm">                {isDoctor ? <FaUser className="text-slate-400" /> : <FaUserMd className="text-slate-400" />}
                 <span className="text-slate-500">{isDoctor ? 'Patient' : 'Doctor'}</span>
                 <span className="text-ink font-medium">
                   {isDoctor ? prescription.patientId?.fullName : `Dr. ${prescription.doctorId?.fullName}`}
@@ -108,7 +108,7 @@ const PrescriptionList: React.FC = () => {
                 {prescription.issueDate ? formatDate(prescription.issueDate) : 'N/A'}
               </div>
               {prescription.medications?.length ? (
-                <p className="text-xs text-slate-500 truncate">{prescription.medications.slice(0, 2).join(', ')}{(prescription.medications?.length || 0) > 2 ? '…' : ''}</p>
+                <p className="text-sm text-slate-500 truncate">{prescription.medications.slice(0, 2).join(', ')}{(prescription.medications?.length || 0) > 2 ? '…' : ''}</p>
               ) : null}
               <div className="flex gap-2 pt-2">
                 <button
@@ -131,15 +131,22 @@ const PrescriptionList: React.FC = () => {
         ))}
       </div>
 
-      {prescriptionsData.total_pages > 1 && (
-        <div className="mt-6">
+      {(() => {
+        const meta = parsePaginationMeta(prescriptionsData, currentPage, pageSize);
+        return (
           <Pagination
-            currentPage={currentPage}
-            totalPages={prescriptionsData.total_pages}
+            className="mt-8"
+            currentPage={meta.currentPage}
+            totalPages={meta.totalPages}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
             onPageChange={setCurrentPage}
           />
-        </div>
-      )}
+        );
+      })()}
 
       {showPrescriptionModal && selectedPrescription && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50" onClick={handleCloseModal}>

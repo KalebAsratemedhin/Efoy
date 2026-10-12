@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useSigninMutation } from "../../redux/api/authAPI";
-import Spinner from "../utils/Spinner";
+import { InlineSpinner } from "../utils/Spinner";
 import { useEffect } from "react";
 import { authSelector, setAuth } from "../../redux/slices/authSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -108,11 +108,6 @@ const Signin = () => {
           </div>
 
           <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {isLoading && (
-              <div className="flex justify-center py-2">
-                <Spinner />
-              </div>
-            )}
             {isError && <FormError error={error} />}
 
             <div>
@@ -176,8 +171,17 @@ const Signin = () => {
               whileTap={{ scale: 0.99 }}
               className="w-full bg-accent text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-accent-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {isLoading ? "Signing in…" : "Sign in"}
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <InlineSpinner className="text-white" />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </motion.button>
           </form>
 

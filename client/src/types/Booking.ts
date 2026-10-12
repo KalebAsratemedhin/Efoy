@@ -1,56 +1,64 @@
 import { User } from "./User";
 
+export type BookingStatus = "pending" | "confirmed" | "finished" | "cancelled";
+export type PaymentStatus = "paid" | "unpaid" | "refunded";
+export type AppointmentType = "in_person" | "virtual";
+export type BookingSort = "date_desc" | "date_asc";
+
 export interface Booking {
-    id?: string,  // Changed from _id to id
-    patientId?: string,
-    doctorId?: string,
-    appointmentDate: string,  // Made required
-    time: string,  // Made required
-    reason: string,  // Made required
-    status?: string,
-    paymentStatus?: string,  // "unpaid", "paid", "refunded"
-    paymentId?: string,  // Reference to Payment document
-    paymentAmount?: number,  // Payment amount in USD
-    paymentCurrency?: string,  // Payment currency
-    appointmentType?: string,  // "in_person" or "virtual"
-    streamCallId?: string,
-    callStartedAt?: string,
-    callEndedAt?: string,
-    callDuration?: number,
-    created_at?: string;  // Added missing fields
+    id?: string;
+    patientId?: string;
+    doctorId?: string;
+    appointmentDate: string;
+    time: string;
+    reason: string;
+    status?: BookingStatus | string;
+    paymentStatus?: PaymentStatus | string;
+    paymentId?: string;
+    paymentAmount?: number;
+    paymentCurrency?: string;
+    appointmentType?: AppointmentType | string;
+    streamCallId?: string;
+    callStartedAt?: string;
+    callEndedAt?: string;
+    callDuration?: number;
+    created_at?: string;
     updated_at?: string;
 }
 
 export interface BookingPopulated {
-    id?: string,  // Changed from _id to id
-    patientId?: User,
-    doctorId: User,
+    id?: string;
+    patientId?: User;
+    doctorId: User;
     doctorData: {
+        id?: string;
         speciality: string;
         experience: string;
         educationLevel: string;
         rating?: number;
         orgID: string;
-        workingHours?: Record<string, {start: string, end: string}>;
+        sessionPrice?: number;
+        workingHours?: Record<string, { start: string; end: string }>;
+        created_at?: string;
+        updated_at?: string;
     };
-    appointmentDate: string,
-    time: string,
-    reason: string,
-    status?: string,
-    paymentStatus?: string,  // "unpaid", "paid", "refunded"
-    paymentId?: string,  // Reference to Payment document
-    paymentAmount?: number,  // Payment amount in USD
-    paymentCurrency?: string,  // Payment currency
-    appointmentType?: string,  // "in_person" or "virtual"
-    streamCallId?: string,
-    callStartedAt?: string,
-    callEndedAt?: string,
-    callDuration?: number,
-    created_at?: string;  // Added missing fields
+    appointmentDate: string;
+    time: string;
+    reason: string;
+    status?: BookingStatus | string;
+    paymentStatus?: PaymentStatus | string;
+    paymentId?: string;
+    paymentAmount?: number;
+    paymentCurrency?: string;
+    appointmentType?: AppointmentType | string;
+    streamCallId?: string;
+    callStartedAt?: string;
+    callEndedAt?: string;
+    callDuration?: number;
+    created_at?: string;
     updated_at?: string;
 }
 
-// Added to match backend pagination response
 export interface BookingPaginatedResponse {
     items: BookingPopulated[];
     total: number;
@@ -59,4 +67,18 @@ export interface BookingPaginatedResponse {
     total_pages: number;
     has_next: boolean;
     has_prev: boolean;
+}
+
+export interface BookingListParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: BookingStatus;
+    appointment_type?: AppointmentType;
+    payment_status?: PaymentStatus;
+    date_from?: string;
+    date_to?: string;
+    speciality?: string;
+    min_rating?: number;
+    sort?: BookingSort;
 }

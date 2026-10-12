@@ -1,102 +1,451 @@
 import { useFindCurrentUserBookingsQuery } from "../../redux/api/bookingAPI";
-import Spinner from "../utils/Spinner";
+import { useGetSpecialitiesQuery } from "../../redux/api/doctorAPI";
+import { PageLoader } from "../utils/Spinner";
 import Error from "../utils/Error";
 import BookingCardPatient from "./BookingCardPatient";
 import { authSelector } from "../../redux/slices/authSlice";
 import { useSelector } from "react-redux";
 import BookingCardDoctor from "./BookingCardDoctor";
-import Pagination from "../utils/Pagination";
-import { useState } from "react";
-import { FaFilter, FaSearch } from "react-icons/fa";
-import { BookingPopulated } from "../../types/Booking";
+import Pagination, { parsePaginationMeta } from "../utils/Pagination";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { FaSearch, FaTimes, FaListUl, FaCalendarAlt } from "react-icons/fa";
+import {
+  AppointmentType,
+  BookingListParams,
+  BookingPopulated,
+  BookingSort,
+  BookingStatus,
+  PaymentStatus,
+} from "../../types/Booking";
+import { readNumberParam } from "../../lib/queryParams";
+import AdvancedFilters from "../utils/AdvancedFilters";
+import BookingCalendar from "./BookingCalendar";
+
+type AppointmentsView = "list" | "calendar";
+
+const STATUS_OPTIONS: { value: "" | BookingStatus; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "finished", label: "Finished" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+const TYPE_OPTIONS: { value: "" | AppointmentType; label: string }[] = [
+  { value: "", label: "All types" },
+  { value: "in_person", label: "In-person" },
+  { value: "virtual", label: "Virtual" },
+];
+
+const PAYMENT_OPTIONS: { value: "" | PaymentStatus; label: string }[] = [
+  { value: "", label: "Any payment" },
+  { value: "paid", label: "Paid" },
+  { value: "unpaid", label: "Unpaid" },
+  { value: "refunded", label: "Refunded" },
+];
+
+const SORT_OPTIONS: { value: BookingSort; label: string }[] = [
+  { value: "date_desc", label: "Newest first" },
+  { value: "date_asc", label: "Oldest first" },
+];
+
+const RATING_OPTIONS = [
+  { value: "", label: "Any rating" },
+  { value: "3", label: "3+" },
+  { value: "4", label: "4+" },
+  { value: "4.5", label: "4.5+" },
+];
+
+const selectClass =
+  "h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 pr-8 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
+const inputClass =
+  "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-ink placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent";
 
 const BookingList = () => {
   const authState = useSelector(authSelector);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const limit = 3;
-  const { isSuccess, isError, isLoading, error, data, refetch } = useFindCurrentUserBookingsQuery({
-    page: currentPage,
-    limit,
-  });
+  const isPatient = authState.role === "patient";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchDraft, setSearchDraft] = useState(searchParams.get("search") ?? "");
 
-  if (isLoading) return <Spinner />;
+  const view: AppointmentsView =
+    searchParams.get("view") === "calendar" ? "calendar" : "list";
+
+  const filters: BookingListParams = useMemo(() => {
+    const status = searchParams.get("status") as BookingStatus | null;
+    const appointment_type = searchParams.get("appointment_type") as AppointmentType | null;
+    const payment_status = searchParams.get("payment_status") as PaymentStatus | null;
+    const sort = searchParams.get("sort") as BookingSort | null;
+    const isCalendar = searchParams.get("view") === "calendar";
+
+    const validStatus = STATUS_OPTIONS.some((o) => o.value === status) ? status! : undefined;
+    const validType = TYPE_OPTIONS.some((o) => o.value === appointment_type)
+      ? appointment_type!
+      : undefined;
+    const validPayment = PAYMENT_OPTIONS.some((o) => o.value === payment_status)
+      ? payment_status!
+      : undefined;
+    const validSort = SORT_OPTIONS.some((o) => o.value === sort) ? sort! : "date_desc";
+
+    return {
+      page: isCalendar ? 1 : readNumberParam(searchParams, "page") ?? 1,
+      limit: isCalendar ? 100 : readNumberParam(searchParams, "limit") ?? 6,
+      search: searchParams.get("search") || undefined,
+      status: validStatus || undefined,
+      appointment_type: validType || undefined,
+      payment_status: validPayment || undefined,
+      date_from: searchParams.get("date_from") || undefined,
+      date_to: searchParams.get("date_to") || undefined,
+      speciality: isPatient ? searchParams.get("speciality") || undefined : undefined,
+      min_rating: isPatient ? readNumberParam(searchParams, "min_rating") : undefined,
+      sort: validSort,
+    };
+  }, [searchParams, isPatient]);
+
+  useEffect(() => {
+    setSearchDraft(filters.search ?? "");
+  }, [filters.search]);
+
+  const patchParams = useCallback(
+    (patch: Record<string, string | number | undefined | null>, resetPage = true) => {
+      const next = new URLSearchParams(searchParams);
+      if (resetPage) next.set("page", "1");
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined || value === null || value === "") next.delete(key);
+        else next.set(key, String(value));
+      }
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const { data: specialities = [] } = useGetSpecialitiesQuery(undefined, { skip: !isPatient });
+  const { isSuccess, isError, isLoading, isFetching, error, data, refetch } =
+    useFindCurrentUserBookingsQuery(filters);
+
+  const meta = parsePaginationMeta(data, filters.page ?? 1, filters.limit ?? 6);
+  const bookings: BookingPopulated[] = Array.isArray(data?.items) ? data.items : [];
+  const totalPages = Math.max(1, meta.totalPages || 1);
+
+  const advancedActive = [
+    filters.appointment_type,
+    filters.payment_status,
+    filters.date_from,
+    filters.date_to,
+    filters.speciality,
+    filters.min_rating != null,
+    filters.sort && filters.sort !== "date_desc",
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = Boolean(filters.search || filters.status || advancedActive > 0);
+
+  const clearFilters = () => {
+    setSearchDraft("");
+    const next = new URLSearchParams();
+    next.set("page", "1");
+    next.set("limit", view === "calendar" ? "100" : String(filters.limit ?? 6));
+    if (view === "calendar") next.set("view", "calendar");
+    setSearchParams(next, { replace: true });
+  };
+
+  const setView = (nextView: AppointmentsView) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextView === "calendar") {
+      next.set("view", "calendar");
+      next.delete("page");
+    } else {
+      next.delete("view");
+      if (!next.get("page")) next.set("page", "1");
+      if (!next.get("limit")) next.set("limit", "6");
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  if (isLoading && !data) return <PageLoader label="Loading appointments…" />;
   if (isError) return <Error error={error} />;
 
-  if (isSuccess) {
-    const { items: rawBookings, total_pages: totalPages } = data;
-    const bookings = Array.isArray(rawBookings) ? rawBookings : [];
-    const filteredBookings = bookings.filter((booking: BookingPopulated) => {
-      const matchesSearch =
-        authState.role === "patient"
-          ? booking.doctorId.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-          : booking.patientId?.fullName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-
-    return (
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder={`Search by ${authState.role === "patient" ? "doctor" : "patient"} name...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
-            />
-          </div>
-          <div className="sm:w-48 relative">
-            <FaFilter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 appearance-none bg-white"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="finished">Finished</option>
-            </select>
-          </div>
+  return (
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Appointments</h1>
+          <p className="text-slate-600 text-sm mt-1">View and manage your appointments.</p>
         </div>
 
-        {filteredBookings.length === 0 ? (
-          <div className="border border-slate-200 rounded-lg bg-white py-12 text-center">
-            <p className="text-slate-600 text-sm">
-              {searchTerm || statusFilter !== "all"
-                ? "No appointments match your filters."
-                : "You don't have any appointments yet."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredBookings.map((booking: BookingPopulated) =>
-              authState.role === "patient" ? (
-                <BookingCardPatient key={booking.id} booking={booking} refetch={refetch} />
-              ) : (
-                <BookingCardDoctor key={booking.id} booking={booking} refetch={refetch} />
-              )
-            )}
-          </div>
+        <div
+          className="inline-flex self-start rounded-xl bg-slate-100 p-1 shadow-inner"
+          role="tablist"
+          aria-label="Appointments view"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === "list"}
+            onClick={() => setView("list")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+              view === "list"
+                ? "bg-white text-ink shadow-sm"
+                : "text-slate-600 hover:text-ink"
+            }`}
+          >
+            <FaListUl className="w-3.5 h-3.5" />
+            List
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === "calendar"}
+            onClick={() => setView("calendar")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+              view === "calendar"
+                ? "bg-white text-ink shadow-sm"
+                : "text-slate-600 hover:text-ink"
+            }`}
+          >
+            <FaCalendarAlt className="w-3.5 h-3.5" />
+            Calendar
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+        <form
+          className="relative"
+          onSubmit={(e) => {
+            e.preventDefault();
+            patchParams({ search: searchDraft.trim() || undefined });
+          }}
+        >
+          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="search"
+            placeholder={`Search by ${isPatient ? "doctor" : "patient"} name…`}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
+            className={`${inputClass} pl-10 pr-24`}
+          />
+          <button
+            type="submit"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover"
+          >
+            Search
+          </button>
+        </form>
+
+        <div
+          className="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1"
+          role="tablist"
+          aria-label="Filter by status"
+        >
+          {STATUS_OPTIONS.map((opt) => {
+            const active = (filters.status ?? "") === opt.value;
+            return (
+              <button
+                key={opt.value || "all"}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => patchParams({ status: opt.value || undefined })}
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  active ? "bg-white text-ink shadow-sm" : "text-slate-600 hover:text-ink"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {view === "list" && (
+          <AdvancedFilters
+            forceOpen={advancedActive > 0}
+            activeCount={advancedActive}
+            actions={
+              hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-ink"
+                >
+                  <FaTimes className="w-3 h-3" />
+                  Clear filters
+                </button>
+              ) : undefined
+            }
+          >
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${
+                isPatient ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"
+              }`}
+            >
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Type</label>
+                <select
+                  value={filters.appointment_type ?? ""}
+                  onChange={(e) =>
+                    patchParams({ appointment_type: e.target.value || undefined })
+                  }
+                  className={selectClass}
+                >
+                  {TYPE_OPTIONS.map((o) => (
+                    <option key={o.label} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Payment</label>
+                <select
+                  value={filters.payment_status ?? ""}
+                  onChange={(e) =>
+                    patchParams({ payment_status: e.target.value || undefined })
+                  }
+                  className={selectClass}
+                >
+                  {PAYMENT_OPTIONS.map((o) => (
+                    <option key={o.label} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">From</label>
+                <input
+                  type="date"
+                  value={filters.date_from ?? ""}
+                  onChange={(e) => patchParams({ date_from: e.target.value || undefined })}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">To</label>
+                <input
+                  type="date"
+                  value={filters.date_to ?? ""}
+                  onChange={(e) => patchParams({ date_to: e.target.value || undefined })}
+                  className={inputClass}
+                />
+              </div>
+
+              {isPatient && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Speciality</label>
+                  <select
+                    value={filters.speciality ?? ""}
+                    onChange={(e) => patchParams({ speciality: e.target.value || undefined })}
+                    className={selectClass}
+                  >
+                    <option value="">All specialities</option>
+                    {specialities.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {isPatient && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Min rating</label>
+                  <select
+                    value={filters.min_rating != null ? String(filters.min_rating) : ""}
+                    onChange={(e) =>
+                      patchParams({
+                        min_rating: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                    className={selectClass}
+                  >
+                    {RATING_OPTIONS.map((o) => (
+                      <option key={o.label} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="w-full sm:w-56">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Sort</label>
+              <select
+                value={filters.sort ?? "date_desc"}
+                onChange={(e) => patchParams({ sort: e.target.value })}
+                className={selectClass}
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </AdvancedFilters>
         )}
 
-        {totalPages > 1 && (
-          <div className="mt-6">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
-          </div>
+        {view === "calendar" && hasActiveFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-ink"
+          >
+            <FaTimes className="w-3 h-3" />
+            Clear filters
+          </button>
         )}
       </div>
-    );
-  }
 
-  return null;
+      {isFetching && data && (
+        <p className="text-xs text-slate-500 mb-3">Updating results…</p>
+      )}
+
+      {view === "calendar" ? (
+        <BookingCalendar
+          bookings={bookings}
+          emptyHint={
+            hasActiveFilters
+              ? "No appointments match your filters."
+              : "You don't have any appointments yet."
+          }
+        />
+      ) : isSuccess && bookings.length === 0 ? (
+        <div className="border border-slate-200 rounded-xl bg-white py-12 px-6 text-center shadow-sm">
+          <p className="text-slate-600 text-sm">
+            {hasActiveFilters
+              ? "No appointments match your filters."
+              : "You don't have any appointments yet."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-stretch">
+          {bookings.map((booking) =>
+            isPatient ? (
+              <BookingCardPatient key={booking.id} booking={booking} refetch={refetch} />
+            ) : (
+              <BookingCardDoctor key={booking.id} booking={booking} refetch={refetch} />
+            )
+          )}
+        </div>
+      )}
+
+      {view === "list" && (
+        <Pagination
+          className="mt-8"
+          currentPage={meta.currentPage}
+          totalPages={totalPages}
+          pageSize={filters.limit ?? 6}
+          onPageSizeChange={(size) => patchParams({ limit: size, page: 1 }, false)}
+          onPageChange={(page) => patchParams({ page }, false)}
+        />
+      )}
+    </div>
+  );
 };
 
 export default BookingList;

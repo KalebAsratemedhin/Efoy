@@ -11,7 +11,7 @@ const Welcome = () => {
     });
     const { isDarkMode } = useTheme();
 
-    if (isLoading) return <Spinner />;
+    if (isLoading) return <Spinner size="sm" className="py-6" />;
     if (isError) return <Error error={error} />;
 
 

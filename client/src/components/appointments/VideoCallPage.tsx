@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import VideoCall from "./VideoCall";
-import { FaVideo, FaUserMd, FaCalendar, FaPhone, FaArrowLeft } from "react-icons/fa";
-import Spinner from "../utils/Spinner";
+import { FaVideo, FaUserMd, FaCalendar, FaPhone } from "react-icons/fa";
+import { PageLoader } from "../utils/Spinner";
 import FormError from "../utils/FormError";
+import BackButton from "../utils/BackButton";
 import { useJoinVideoCallMutation, useEndVideoCallMutation } from "../../redux/api/videoAPI";
 import { authSelector } from "../../redux/slices/authSlice";
 
@@ -63,7 +64,7 @@ const VideoCallPage: React.FC = () => {
     navigate("/appointments");
   };
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <PageLoader label="Joining call…" />;
 
   if (callData) {
     return (
@@ -79,32 +80,28 @@ const VideoCallPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-slate-600 hover:text-ink text-sm font-medium mb-6"
-      >
-        <FaArrowLeft className="w-4 h-4" />
-        Back
-      </button>
+    <div className="max-w-4xl mx-auto">
+      <BackButton onClick={() => navigate(-1)} className="mb-6" />
 
-      <div className="bg-slate-50 border border-slate-100 rounded-xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-6 sm:px-8 py-6 border-b border-slate-200 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
             <FaVideo className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-ink">Video consultation</h1>
-            <p className="text-slate-600 text-sm">Join your scheduled appointment</p>
+            <h1 className="text-xl font-semibold text-ink">Video consultation</h1>
+            <p className="text-slate-600 text-sm mt-0.5">Join your scheduled appointment</p>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 sm:p-8 space-y-6">
           {(error || isJoinError) && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <>
               <FormError error={error || joinError} />
-            </div>
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                Couldn’t join the call. Please try again.
+              </div>
+            </>
           )}
 
           <div className="text-center py-4">

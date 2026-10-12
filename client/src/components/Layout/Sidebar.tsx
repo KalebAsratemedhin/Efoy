@@ -4,17 +4,16 @@ import { authSelector, clearAuth } from "../../redux/slices/authSlice";
 import { useSignoutMutation } from "../../redux/api/authAPI";
 import { useGetCurrentUserQuery } from "../../redux/api/userAPI";
 import {
-  FaHome,
   FaUserMd,
   FaCalendarAlt,
   FaCog,
   FaSignOutAlt,
   FaUser,
   FaHospital,
-  FaClipboardList,
   FaArrowLeft,
   FaPills,
 } from "react-icons/fa";
+import { toast } from "sonner";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -33,35 +32,30 @@ const Sidebar = ({ isOpen, onSidebarToggle }: SidebarProps) => {
     try {
       await signout().unwrap();
       dispatch(clearAuth());
+      toast.success("Signed out");
       navigate('/');
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      toast.error("Failed to sign out. Please try again.");
     }
   };
 
   const navigation = authState.role === "admin" 
     ? [
-        { name: "Home", href: "/", icon: FaHome },
         { name: "Dashboard", href: "/dashboard", icon: FaUser },
-        { name: "Applications", href: "/applications", icon: FaClipboardList },
         { name: "Doctors", href: "/doctors", icon: FaUserMd },
         { name: "Settings", href: "/settings", icon: FaCog },
       ]
     : authState.role === "doctor"
     ? [
-        { name: "Home", href: "/", icon: FaHome },
         { name: "Dashboard", href: "/dashboard", icon: FaUser },
         { name: "Appointments", href: "/appointments", icon: FaCalendarAlt },
-        { name: "Calendar", href: "/calendar", icon: FaCalendarAlt },
         { name: "Doctors", href: "/doctors", icon: FaUserMd },
         { name: "Prescriptions", href: "/prescriptions", icon: FaPills },
         { name: "Settings", href: "/settings", icon: FaCog },
       ]
     : [
-        { name: "Home", href: "/", icon: FaHome },
         { name: "Dashboard", href: "/dashboard", icon: FaUser },
         { name: "Appointments", href: "/appointments", icon: FaCalendarAlt },
-        { name: "Calendar", href: "/calendar", icon: FaCalendarAlt },
         { name: "Doctors", href: "/doctors", icon: FaUserMd },
         { name: "Prescriptions", href: "/prescriptions", icon: FaPills },
         { name: "Settings", href: "/settings", icon: FaCog },

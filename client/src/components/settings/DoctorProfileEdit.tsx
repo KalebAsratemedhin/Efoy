@@ -5,7 +5,7 @@ import { useUpdateDoctorMutation } from "../../redux/api/doctorAPI";
 import { useEffect, useState } from "react";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
-import Spinner from "../utils/Spinner";
+import { PageLoader } from "../utils/Spinner";
 import { FaClock, FaMoneyBillWave, FaGraduationCap, FaBriefcase } from "react-icons/fa";
 
 interface WorkingHours {
@@ -93,7 +93,7 @@ const DoctorProfileEdit = () => {
     });
   };
 
-  if (isDoctorLoading) return <Spinner />;
+  if (isDoctorLoading) return <PageLoader label="Loading profile…" />;
   if (!doctorData) {
     return (
       <div className="py-8 text-center text-slate-600">Doctor profile not found.</div>

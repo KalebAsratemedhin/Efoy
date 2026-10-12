@@ -4,70 +4,169 @@ from app.db.models.user import User
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorOut
 from beanie import PydanticObjectId
 from fastapi import HTTPException
-from typing import List, Optional, Dict
-from beanie.operators import And, Or
+from typing import Dict, List, Optional
 from app.core.security import pwd_context
+
+DOCTOR_SORT_OPTIONS = {
+    "rating_desc": [("rating", -1)],
+    "price_asc": [("sessionPrice", 1)],
+    "price_desc": [("sessionPrice", -1)],
+    "experience_desc": [("experienceYears", -1)],
+}
+
+
+def _empty_doctor_page(page: int, limit: int) -> dict:
+    return {
+        "items": [],
+        "total": 0,
+        "page": page,
+        "limit": limit,
+        "total_pages": 0,
+        "has_next": False,
+        "has_prev": False,
+    }
+
+
+def _experience_years_expr() -> dict:
+    """Parse leading integer from free-text experience (e.g. '6 years' → 6)."""
+    return {
+        "$convert": {
+            "input": {"$arrayElemAt": [{"$split": ["$experience", " "]}, 0]},
+            "to": "int",
+            "onError": None,
+            "onNull": None,
+        }
+    }
+
 
 class DoctorService:
     @staticmethod
-    async def find_all_doctors(page: int = 1, limit: int = 10, search: Optional[str] = None) -> dict:
-        skip = (page - 1) * limit
-        user_query = {"role": "doctor"}
-        user_ids_by_name = set()
-        user_ids_by_speciality = set()
+    async def find_all_doctors(
+        page: int = 1,
+        limit: int = 10,
+        search: Optional[str] = None,
+        speciality: Optional[str] = None,
+        min_rating: Optional[float] = None,
+        min_experience: Optional[int] = None,
+        max_experience: Optional[int] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        sort: str = "rating_desc",
+    ) -> dict:
+        if sort not in DOCTOR_SORT_OPTIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid sort. Allowed: {', '.join(DOCTOR_SORT_OPTIONS)}",
+            )
 
-        if search:
-            # Find users by name
+        match: dict = {}
+
+        if speciality:
+            match["speciality"] = {
+                "$regex": f"^{re.escape(speciality.strip())}$",
+                "$options": "i",
+            }
+
+        if min_rating is not None:
+            match["rating"] = {"$gte": min_rating}
+
+        price_filter: dict = {}
+        if min_price is not None:
+            price_filter["$gte"] = min_price
+        if max_price is not None:
+            price_filter["$lte"] = max_price
+        if price_filter:
+            match["sessionPrice"] = price_filter
+
+        if search and search.strip():
+            term = search.strip()
             users_by_name = await User.find({
                 "role": "doctor",
-                "fullName": {"$regex": search, "$options": "i"}
+                "fullName": {"$regex": re.escape(term), "$options": "i"},
             }).to_list()
             user_ids_by_name = {user.id for user in users_by_name}
 
-            # Find doctors by speciality
             doctors_by_speciality = await Doctor.find({
-                "speciality": {"$regex": search, "$options": "i"}
+                "speciality": {"$regex": re.escape(term), "$options": "i"},
             }).to_list()
-            
-            # Fetch links for speciality search results
+            user_ids_by_speciality = set()
             for doc in doctors_by_speciality:
-                await doc.fetch_link(Doctor.userId)
-            user_ids_by_speciality = {doc.userId.id for doc in doctors_by_speciality}
+                link = doc.userId
+                uid = link.ref.id if hasattr(link, "ref") else link.id
+                user_ids_by_speciality.add(uid)
 
-            # Union of user IDs
             user_ids = list(user_ids_by_name | user_ids_by_speciality)
-         
-            
-            # Convert user IDs to Link references
-            user_links = [User.link_from_id(PydanticObjectId(uid)) for uid in user_ids]
-            doctors = await Doctor.find({"userId": {"$in": user_links}}).sort(-Doctor.rating).skip(skip).limit(limit).to_list()
-            
-            # Fetch links and process results
-            for doctor in doctors:
-                await doctor.fetch_link(Doctor.userId)
-            doctor_out_list = [DoctorOut.model_validate(doc.model_dump()) for doc in doctors]
-            
-            # Count total for pagination
-            total_doctors = await Doctor.find({"userId": {"$in": user_links}}).count()
-            total_pages = (total_doctors + limit - 1) // limit
-            return {
-                'totalPages': total_pages,
-                'currentPage': page,
-                'doctors': doctor_out_list
+            if not user_ids:
+                return _empty_doctor_page(page, limit)
+            match["userId.id"] = {"$in": user_ids}
+
+        needs_experience = (
+            min_experience is not None
+            or max_experience is not None
+            or sort == "experience_desc"
+        )
+
+        pipeline: List[dict] = []
+        if match:
+            pipeline.append({"$match": match})
+
+        if needs_experience:
+            pipeline.append({"$addFields": {"experienceYears": _experience_years_expr()}})
+            experience_match: dict = {}
+            if min_experience is not None:
+                experience_match["$gte"] = min_experience
+            if max_experience is not None:
+                experience_match["$lte"] = max_experience
+            if experience_match:
+                pipeline.append({
+                    "$match": {
+                        "experienceYears": experience_match,
+                    }
+                })
+
+        skip = (page - 1) * limit
+        sort_spec = DOCTOR_SORT_OPTIONS[sort]
+
+        facet_pipeline = pipeline + [
+            {
+                "$facet": {
+                    "meta": [{"$count": "total"}],
+                    "items": [
+                        {"$sort": dict(sort_spec)},
+                        {"$skip": skip},
+                        {"$limit": limit},
+                    ],
+                }
             }
-        else:
-            # No search - get all doctors sorted by rating (highest first)
-            doctors = await Doctor.find().sort(-Doctor.rating).skip(skip).limit(limit).to_list()
-            for doctor in doctors:
-                await doctor.fetch_link(Doctor.userId)
-            doctor_out_list = [DoctorOut.model_validate(doc.model_dump()) for doc in doctors]
-            total_doctors = await Doctor.find().count()
-            total_pages = (total_doctors + limit - 1) // limit
-            return {
-                'totalPages': total_pages,
-                'currentPage': page,
-                'doctors': doctor_out_list
-            }
+        ]
+
+        collection = Doctor.get_motor_collection()
+        result = await collection.aggregate(facet_pipeline).to_list(length=1)
+        facet = result[0] if result else {"meta": [], "items": []}
+        total = facet["meta"][0]["total"] if facet["meta"] else 0
+        raw_items = facet["items"]
+
+        doctors_out: List[DoctorOut] = []
+        for raw in raw_items:
+            doctor = await Doctor.get(raw["_id"], fetch_links=True)
+            if doctor:
+                doctors_out.append(DoctorOut.model_validate(doctor.model_dump()))
+
+        total_pages = (total + limit - 1) // limit if total else 0
+        return {
+            "items": doctors_out,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1,
+        }
+
+    @staticmethod
+    async def list_specialities() -> List[str]:
+        specialities = await Doctor.distinct("speciality")
+        return sorted(s for s in specialities if s)
 
     @staticmethod
     async def find_one_doctor(id: str) -> dict:
@@ -90,17 +189,15 @@ class DoctorService:
 
     @staticmethod
     async def update_doctor(id: str, update: DoctorUpdate, current_user: User) -> dict:
-        # Find the doctor profile by doctor ID with links fetched
         doc = await Doctor.find_one(Doctor.id == PydanticObjectId(id), fetch_links=True)
         if not doc:
             raise HTTPException(status_code=404, detail="Doctor profile not found.")
-        
-        # Check if the current user owns this doctor profile
+
         if str(doc.userId.id) != str(current_user.id):
             raise HTTPException(status_code=401, detail="Unauthorized. You can only update your own profile.")
 
         update_data = update.model_dump(exclude_unset=True)
-        
+
         for field, value in update_data.items():
             setattr(doc, field, value)
 
@@ -109,16 +206,13 @@ class DoctorService:
 
     @staticmethod
     async def update_working_hours(id: str, working_hours: Dict[str, Dict[str, str]], current_user: User) -> dict:
-        # Find the doctor profile by doctor ID with links fetched
         doctor = await Doctor.find_one(Doctor.id == PydanticObjectId(id), fetch_links=True)
         if not doctor:
             raise HTTPException(status_code=404, detail="Doctor profile not found.")
-        
-        # Check if the current user owns this doctor profile
+
         if str(doctor.userId.id) != str(current_user.id):
             raise HTTPException(status_code=401, detail="Unauthorized. You can only update your own profile.")
-        
-        # Validate working hours format
+
         days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
         for day, hours in working_hours.items():
             if day not in days:
@@ -131,12 +225,11 @@ class DoctorService:
                 raise HTTPException(status_code=400, detail=f"Invalid end time format for {day}. Use HH:MM.")
             if hours["start"] >= hours["end"]:
                 raise HTTPException(status_code=400, detail=f"Start time must be before end time for {day}")
-        
-        # Update only the provided days, preserve existing settings for other days
+
         current_working_hours = doctor.workingHours.copy()
         current_working_hours.update(working_hours)
         doctor.workingHours = current_working_hours
-        
+
         await doctor.save()
         return DoctorOut.model_validate(doctor)
 

@@ -3,9 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useVerifyEmailMutation, useResendVerificationMutation } from '../redux/api/authAPI';
 import { useDispatch } from 'react-redux';
 import { setAuth } from '../redux/slices/authSlice';
-import Spinner from '../components/utils/Spinner';
+import { InlineSpinner, PageLoader } from '../components/utils/Spinner';
 import FormSuccess from '../components/utils/FormSuccess';
 import FormError from '../components/utils/FormError';
+import BackButton from '../components/utils/BackButton';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -46,26 +47,19 @@ const VerifyEmail = () => {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <div className="text-center">
-            <Spinner />
-            <h2 className="text-xl font-semibold text-gray-900 mt-4">Verifying your email...</h2>
-            <p className="text-gray-600 mt-2">Please wait while we verify your email address.</p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <PageLoader label="Verifying your email…" />
       </div>
     );
   }
 
   if (isVerified) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full">
           <FormSuccess message="Email verified successfully! You are now logged in and being redirected to your dashboard." />
-          <div className="mt-6 text-center">
-            <Spinner />
-            <p className="text-gray-600 mt-2">Redirecting to dashboard...</p>
+          <div className="mt-6">
+            <PageLoader label="Redirecting to dashboard…" />
           </div>
         </div>
       </div>
@@ -74,13 +68,17 @@ const VerifyEmail = () => {
 
   if (verifyError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full text-center">
           <FormError error="Email verification failed. The link may be invalid or expired." />
+          <h2 className="text-xl font-semibold text-ink">Verification failed</h2>
+          <p className="text-slate-600 text-sm mt-2">
+            The link may be invalid or expired. You can request a new verification email.
+          </p>
           <div className="mt-6">
             <button
               onClick={() => setShowResendForm(true)}
-              className="w-full bg-accent text-white px-6 py-2 rounded-lg hover:bg-accent-hover transition-colors"
+              className="w-full bg-accent text-white px-6 py-2.5 rounded-xl hover:bg-accent-hover transition-colors"
             >
               Resend Verification Email
             </button>
@@ -92,16 +90,16 @@ const VerifyEmail = () => {
 
   if (showResendForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Resend Verification Email</h2>
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm max-w-md w-full">
+          <h2 className="text-2xl font-bold text-ink mb-6 text-center">Resend Verification Email</h2>
           
           {isResent && <FormSuccess message="Verification email sent successfully! Please check your inbox." />}
           {resendError && <FormError error="Failed to send verification email. Please try again." />}
           
           <form onSubmit={handleResendVerification} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
                 Email Address
               </label>
               <input
@@ -109,7 +107,7 @@ const VerifyEmail = () => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
                 placeholder="Enter your email address"
                 required
               />
@@ -118,19 +116,21 @@ const VerifyEmail = () => {
             <button
               type="submit"
               disabled={isResending}
-              className="w-full bg-accent text-white px-6 py-2 rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 bg-accent text-white px-6 py-2.5 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
-              {isResending ? <Spinner /> : 'Send Verification Email'}
+              {isResending ? (
+                <>
+                  <InlineSpinner className="text-white" />
+                  Sending…
+                </>
+              ) : (
+                'Send Verification Email'
+              )}
             </button>
           </form>
           
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => navigate('/signin')}
-              className="text-accent hover:text-accent-hover text-sm"
-            >
-              Back to Sign In
-            </button>
+          <div className="mt-6 flex justify-center">
+            <BackButton to="/signin" label="Back to Sign In" />
           </div>
         </div>
       </div>

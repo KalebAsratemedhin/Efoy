@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { useAdminCreateDoctorMutation } from "../../redux/api/doctorAPI";
 import { DoctorCreate } from "../../types/Doctor";
-import Spinner from "../utils/Spinner";
+import { InlineSpinner } from "../utils/Spinner";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
 
@@ -142,7 +142,13 @@ const AdminCreateDoctor = () => {
             disabled={isLoading}
             className="px-5 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLoading ? <Spinner /> : "Create doctor"}
+            {isLoading ? (
+              <span className="inline-flex items-center gap-2">
+                <InlineSpinner /> Creating…
+              </span>
+            ) : (
+              "Create doctor"
+            )}
           </button>
           <Link
             to="/dashboard"

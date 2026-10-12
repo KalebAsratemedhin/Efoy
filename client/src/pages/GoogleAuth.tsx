@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setAuth } from "../redux/slices/authSlice";
-import Spinner from "../components/utils/Spinner";
+import { PageLoader } from "../components/utils/Spinner";
 
 const GoogleAuth = () => {
   const [searchParams] = useSearchParams() 
@@ -40,11 +40,8 @@ const GoogleAuth = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <Spinner />
-          <p className="mt-4 text-gray-600">Authenticating with Google...</p>
-        </div>
+      <div className="flex justify-center items-center min-h-screen bg-cream">
+        <PageLoader label="Authenticating with Google…" />
       </div>
     );
   }

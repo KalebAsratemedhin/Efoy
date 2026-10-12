@@ -9,7 +9,7 @@ import { useGetPatientDashboardQuery } from "../../redux/api/dashboardAPI";
 import { useFindCurrentUserFavoritesQuery } from "../../redux/api/ratingAPI";
 import { useGetPatientPrescriptionsQuery } from "../../redux/api/prescriptionAPI";
 import { useFindCurrentUserBookingsQuery } from "../../redux/api/bookingAPI";
-import Spinner from "../utils/Spinner";
+import { PageLoader } from "../utils/Spinner";
 import Error from "../utils/Error";
 import { formatTime } from "../../utils/timeUtils";
 
@@ -20,17 +20,17 @@ const PatientDashboard = () => {
   const { data: prescriptionsData } = useGetPatientPrescriptionsQuery({ page: 1, limit: 5 });
   const { data: bookingsData } = useFindCurrentUserBookingsQuery({ page: 1, limit: 10 });
 
-  if (isUserLoading || isDashboardLoading) return <Spinner />;
+  if (isUserLoading || isDashboardLoading) return <PageLoader label="Loading dashboard…" />;
   if (isUserError) return <Error error={userError} />;
   if (dashboardError) return <Error error={dashboardError} />;
 
   return (
     <div className="max-w-7xl mx-auto">
-      <p className="text-slate-700 text-2xl font-bold">Welcome back, {user?.fullName}</p>
+      <h1 className="text-2xl font-bold text-ink">Welcome back, {user?.fullName}</h1>
 
       {/* Stat tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-6">
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-500 font-medium">Total bookings</p>
             <p className="mt-1 text-2xl font-semibold text-ink">
@@ -41,7 +41,7 @@ const PatientDashboard = () => {
             All
           </span>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-emerald-50/60 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-emerald-800 font-medium">Upcoming</p>
             <p className="mt-1 text-2xl font-semibold text-ink">
@@ -52,7 +52,7 @@ const PatientDashboard = () => {
             ●
           </span>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-sky-50/60 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-sky-800 font-medium">Completed</p>
             <p className="mt-1 text-2xl font-semibold text-ink">
@@ -63,7 +63,7 @@ const PatientDashboard = () => {
             ✓
           </span>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-amber-50/60 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-amber-800 font-medium">Favorites</p>
             <p className="mt-1 text-2xl font-semibold text-ink">
@@ -78,7 +78,7 @@ const PatientDashboard = () => {
 
       {/* Report + Upcoming appointment side by side, equal height via grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 mb-6 items-stretch">
-        <div className="min-h-0 flex flex-col bg-slate-50 border border-slate-200 rounded-xl py-8 px-8">
+        <div className="min-h-0 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm py-6 px-6">
           <div className="flex-1 min-h-0 flex flex-col">
             <MonthlyReport 
               dashboardData={dashboardData}
@@ -100,7 +100,7 @@ const PatientDashboard = () => {
 
       {/* Unpaid + Prescriptions side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-ink">Unpaid Appointments</h2>
             <Link to="/appointments" className="text-slate-600 hover:text-ink text-sm font-medium">
@@ -144,7 +144,7 @@ const PatientDashboard = () => {
           )}
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-ink">Recent Prescriptions</h2>
             <Link to="/prescriptions" className="text-slate-600 hover:text-ink text-sm font-medium">View all</Link>

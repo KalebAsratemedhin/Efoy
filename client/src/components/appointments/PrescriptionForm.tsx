@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { FaPills, FaPlus, FaTrash, FaSave, FaSignature, FaArrowLeft } from "react-icons/fa";
+import { FaPills, FaPlus, FaTrash, FaSave, FaSignature } from "react-icons/fa";
 import { useCreatePrescriptionMutation } from "../../redux/api/prescriptionAPI";
 import { PrescriptionCreate } from "../../types/Prescription";
 import FormError from "../utils/FormError";
 import FormSuccess from "../utils/FormSuccess";
+import BackButton from "../utils/BackButton";
 import SignatureCanvas from "react-signature-canvas";
 
 interface FormData {
@@ -141,7 +142,7 @@ const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
   const labelClass = "block text-sm font-medium text-slate-700 mb-1.5";
 
   return (
-    <div className="bg-white border border-slate-100 rounded-xl p-6">
+    <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-ink flex items-center gap-2">
@@ -152,16 +153,7 @@ const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
             For <span className="font-medium text-ink">{patientName}</span>
           </p>
         </div>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="inline-flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-ink hover:bg-slate-50"
-          >
-            <FaArrowLeft className="w-3.5 h-3.5 text-slate-500" />
-            Back
-          </button>
-        )}
+        {onCancel && <BackButton onClick={onCancel} />}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

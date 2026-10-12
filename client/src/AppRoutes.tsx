@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { authSelector, getAuth } from "./redux/slices/authSlice"
 import { useEffect } from "react"
 
@@ -18,7 +18,6 @@ import ContactPage from "./pages/Contact"
 import AboutPage from "./pages/About"
 import GoogleAuth from "./pages/GoogleAuth"
 import AuthSetup from "./components/auth/AuthSetup"
-import CalendarPage from "./pages/Calendar"
 import AdminCreateDoctor from "./components/dashboard/AdminCreateDoctor";
 import VerifyEmail from "./pages/VerifyEmail";
 import VideoCallPage from "./components/appointments/VideoCallPage";
@@ -62,7 +61,7 @@ const AppRoutes = () => {
                     <Route path="/book/:id" element={<Book />} />
                     <Route path="/appointments" element={<Appointments />} />
                     <Route path="/appointments/:id" element={<Appointments />} />
-                    <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/calendar" element={<Navigate to="/appointments?view=calendar" replace />} />
                     <Route path="/admin/doctors/create" element={<AdminCreateDoctor />} />
                     <Route path="/prescriptions" element={<PrescriptionList />} />
                     <Route path="/payment/:bookingId" element={<Payment />} />

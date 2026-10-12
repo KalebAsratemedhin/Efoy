@@ -1,6 +1,6 @@
 import { useGetDoctorByIdQuery } from '../../redux/api/doctorAPI';
 import { useParams } from 'react-router-dom';
-import Spinner from "../utils/Spinner";
+import { PageLoader } from "../utils/Spinner";
 import Error from "../utils/Error";
 import DoctorProfile from './DoctorProfile';
 import { Doctor } from '../../types/User';
@@ -10,15 +10,11 @@ const DoctorDetails = () => {
   const { isLoading, isError, isSuccess, error, data } = useGetDoctorByIdQuery(id as string);
   const doctor = data;
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <PageLoader label="Loading doctor…" />;
   if (isError) return <Error error={error} />;
 
-  if (isSuccess)
-    return (
-      <div className='p-6'>
-        <DoctorProfile doctor={doctor as Doctor} />
-      </div>
-    );
+  if (isSuccess) return <DoctorProfile doctor={doctor as Doctor} />;
+  return null;
 };
 
 export default DoctorDetails;

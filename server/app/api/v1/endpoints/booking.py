@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, WebSocket, WebSocketDisconnect
-from typing import List
+from typing import List, Optional
 from app.schemas.booking import BookingCreate, BookingUpdate, BookingOut, BookingPaginatedResponse
 from app.db.models.user import User
 from app.core.security import get_current_user
@@ -47,10 +47,31 @@ async def websocket_slots(websocket: WebSocket, doctor_id: str, appointment_date
 async def find_all_user_bookings(
     current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1)
+    limit: int = Query(10, ge=1, le=100),
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    appointment_type: Optional[str] = None,
+    payment_status: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    speciality: Optional[str] = None,
+    min_rating: Optional[float] = Query(None, ge=0, le=5),
+    sort: str = Query("date_desc"),
 ):
-    result = await BookingService.find_all_user_bookings(current_user, page, limit)
-    return result
+    return await BookingService.find_all_user_bookings(
+        current_user=current_user,
+        page=page,
+        limit=limit,
+        search=search,
+        status=status,
+        appointment_type=appointment_type,
+        payment_status=payment_status,
+        date_from=date_from,
+        date_to=date_to,
+        speciality=speciality,
+        min_rating=min_rating,
+        sort=sort,
+    )
 
 @router.get('/recent', response_model=BookingOut)
 async def find_recent_booking(current_user: User = Depends(get_current_user)):

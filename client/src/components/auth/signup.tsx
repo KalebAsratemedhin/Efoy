@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignupMutation } from "../../redux/api/authAPI";
-import Spinner from "../utils/Spinner";
+import { InlineSpinner } from "../utils/Spinner";
 import { SignupCredential } from "../../types/User";
 import { FcGoogle } from "react-icons/fc";
 import FormError from "../utils/FormError";
@@ -46,14 +46,6 @@ const Signup = () => {
   const inputClass =
     "w-full bg-cream/50 border border-slate-200 rounded-xl pl-12 pr-4 py-3.5 text-ink placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all font-sans";
   const iconClass = "w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2";
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cream">
-        <Spinner />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex">
@@ -219,8 +211,17 @@ const Signup = () => {
               whileTap={{ scale: 0.99 }}
               className="w-full bg-accent text-white py-3.5 px-4 rounded-xl font-semibold hover:bg-accent-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70 mt-6"
             >
-              Create account
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <InlineSpinner className="text-white" />
+                  Creating account…
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </motion.button>
           </form>
 

@@ -26,9 +26,12 @@ const Layout = () => {
       )}
 
       <div className="flex flex-col flex-grow overflow-auto">
-        <Header onSidebarToggle={handleSidebarToggle} />
+        <Header
+          onSidebarToggle={handleSidebarToggle}
+          showBrandLogo={!isAppLayout || !isOpen}
+        />
         <div
-          className={`flex-grow ${isAppLayout ? "bg-slate-100 p-6" : ""}`}
+          className={`flex-grow ${isAppLayout ? "bg-slate-100 px-4 py-5 sm:px-6 sm:py-6" : ""}`}
         >
           <Outlet />
         </div>
