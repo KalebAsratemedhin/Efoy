@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     SMTP_USER: str = None
     SMTP_PASSWORD: str = None
     EMAIL_FROM: str = None
+    # When false (local/dev), signup auto-verifies and login skips the email check.
+    EMAIL_VERIFICATION_ENABLED: bool = True
 
     class Config:
         env_file = ".env"

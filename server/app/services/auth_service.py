@@ -20,7 +20,23 @@ class AuthService:
             raise HTTPException(status_code=409, detail="Duplicate account found.")
         
         hashed_password = pwd_context.hash(data.password)
-        
+
+        if not settings.EMAIL_VERIFICATION_ENABLED:
+            user = User(
+                fullName=data.fullName,
+                email=data.email,
+                password=hashed_password,
+                phoneNumber=data.phoneNumber,
+                role=data.role,
+                isVerified=True,
+            )
+            await user.insert()
+            return {
+                "message": "Account created successfully.",
+                "id": str(user.id),
+                "email": data.email,
+            }
+
         # Generate verification token
         verification_token = EmailService.generate_verification_token()
         verification_expires = EmailService.get_verification_expiry()
@@ -91,6 +107,9 @@ class AuthService:
     @staticmethod
     async def resend_verification_email(email: str) -> dict:
         """Resend verification email"""
+        if not settings.EMAIL_VERIFICATION_ENABLED:
+            return {"message": "Email verification is disabled."}
+
         user = await User.find_one({"email": email})
         
         if not user:
@@ -126,7 +145,11 @@ class AuthService:
             raise HTTPException(status_code=400, detail="Invalid email or password.")
         
         # Check if email is verified (only for non-Google users)
-        if not user.isVerified and not user.googleId:
+        if (
+            settings.EMAIL_VERIFICATION_ENABLED
+            and not user.isVerified
+            and not user.googleId
+        ):
             raise HTTPException(
                 status_code=401, 
                 detail="Please verify your email address before logging in. Check your email for the verification link."
