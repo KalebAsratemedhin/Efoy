@@ -1,7 +1,5 @@
 import { User } from "../../types/User";
 import { FaCamera } from "react-icons/fa";
-import FormError from "../utils/FormError";
-import FormSuccess from "../utils/FormSuccess";
 import { useUpdateProfilePictureMutation } from "../../redux/api/userAPI";
 import { useCallback, useState } from "react";
 import Cropper, { Area } from "react-easy-crop";
@@ -16,8 +14,7 @@ const ProfilePicture = ({ user }: { user: User }) => {
       ?.split(" ")
       .map((n) => n[0].toUpperCase())
       .join("") || "?";
-  const [updateProfilePicture, { isError, error, isSuccess, isLoading }] =
-    useUpdateProfilePictureMutation();
+  const [updateProfilePicture, { isLoading }] = useUpdateProfilePictureMutation();
 
   const [displayUrl, setDisplayUrl] = useState<string | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -103,8 +100,6 @@ const ProfilePicture = ({ user }: { user: User }) => {
           <InlineSpinner /> Saving…
         </span>
       )}
-      {isError && error && <FormError error={error} />}
-      {isSuccess && !isLoading && <FormSuccess message="Photo updated." />}
 
       {cropSrc && (
         <div

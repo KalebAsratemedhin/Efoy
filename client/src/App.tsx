@@ -11,8 +11,10 @@ function App() {
         position="top-right"
         richColors
         closeButton
+        duration={2200}
         toastOptions={{
           className: "font-sans",
+          duration: 2200,
         }}
       />
     </Provider>

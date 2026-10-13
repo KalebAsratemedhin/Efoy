@@ -51,12 +51,7 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left panel — brand */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="hidden lg:flex lg:w-[44%] bg-ink text-white flex-col justify-between p-12 xl:p-16"
-      >
+      <div className="hidden lg:flex lg:w-[44%] bg-ink text-white flex-col justify-between p-12 xl:p-16">
         <Link to="/" className="font-display font-bold text-2xl text-white">
           Efoy
         </Link>
@@ -75,16 +70,11 @@ const Signup = () => {
         <p className="text-slate-600 text-sm">
           © Efoy · Healthcare, reimagined
         </p>
-      </motion.div>
+      </div>
 
       {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-cream min-h-screen overflow-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-[440px] py-8"
-        >
+        <div className="w-full max-w-[440px] py-8">
           <div className="lg:hidden mb-8">
             <Link to="/" className="font-display font-bold text-2xl text-ink">
               Efoy
@@ -241,7 +231,7 @@ const Signup = () => {
             {" · "}
             <Link to="/privacy" className="underline hover:text-slate-600">Privacy</Link>
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
